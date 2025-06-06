@@ -1,0 +1,108 @@
+{% extends 'sfrp/sfrp_base.html' %} {# Make sure this path is correct for your base template #}
+
+{% load i18n %} {# Required by allauth templates #}
+{% load account socialaccount %} {# Required by allauth templates #}
+
+{% block title %}{% trans "Login" %}{% endblock %} {# Using trans for i18n as allauth does #}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-sm-10">
+        <div class="login-container card p-4 shadow-sm">
+            <h2 class="text-center mb-4">{% trans "Login" %}</h2> {# Using trans for i18n #}
+            <form class="login" id="login_form" method="post" action="{% url 'account_login' %}">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text text-muted small">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {# allauth also handles non_field_errors #}
+                {% if form.non_field_errors %}
+                    <div class="mb-3">
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {# Optional: Remember Me checkbox, handled by allauth #}
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+
+                {# Check for the 'remember' field if you want to display it #}
+                {% if form.login.field.widget.input_type != "hidden" %} {# Ensure not to render the 'login' field if it's hidden #}
+                    {# allauth's default login form sometimes has a 'remember' checkbox #}
+                    {# You can render it explicitly or hide it based on your preference #}
+                    {# Example for remember me: #}
+                    {# <div class="form-check mb-3"> #}
+                    {#     {{ form.remember }} #}
+                    {#     <label class="form-check-label" for="{{ form.remember.id_for_label }}"> #}
+                    {#         {% trans "Remember Me" %} #}
+                    {#     </label> #}
+                    {# </div> #}
+                {% endif %}
+
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">{% trans "Login" %}</button>
+                </div>
+                <div class="text-center mt-3">
+                    <p>{% trans "Not registered yet?" %} <a href="{% url 'account_signup' %}">{% trans "Register" %}</a></p> {# ALLAUTH SIGNUP URL #}
+                    <p><a href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a></p> {# ALLAUTH PASSWORD RESET URL #}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        max-width: 500px;
+        margin: 50px auto; /* Adjust margin for overall page layout */
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        border-color: #0d6efd;
+    }
+    /* You might need to add specific styling for allauth's default form fields if they don't pick up Bootstrap classes automatically */
+    /* For instance, if you see raw list items, you might need: */
+    .account-form ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .account-form li {
+        margin-bottom: 1rem;
+    }
+    .account-form label {
+        display: none; /* Hide labels if you're using placeholders instead */
+    }
+    .account-form input[type="text"],
+    .account-form input[type="email"],
+    .account-form input[type="password"] {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        box-sizing: border-box; /* Ensures padding doesn't increase width */
+    }
+</style>
+{% endblock %}

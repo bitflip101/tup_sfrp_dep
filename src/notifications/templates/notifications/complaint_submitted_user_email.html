@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Complaint #{{ complaint.id }} Submitted</title>
+</head>
+<body>
+    <p>Dear {{ user_name }},</p>
+    <p>Thank you for submitting your complaint to {{ site_name }}.</p>
+    <p>Your complaint ID is <strong>#{{ complaint.id }}</strong> with the subject: <strong>"{{ complaint.subject }}"</strong>.</p>
+    <p>We have received your report and will review it shortly. You will receive updates on its status.</p>
+    <p>You can view the details of your complaint here: <a href="{{ complaint_url }}">{{ complaint_url }}</a></p>
+    <br>
+    <p>Thank you,</p>
+    <p>The {{ site_name }} Team</p>
+</body>
+</html>

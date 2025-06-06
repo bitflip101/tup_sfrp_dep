@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Complaint Submitted - #{{ complaint.id }}</title>
+</head>
+<body>
+    <p>Hello Admin,</p>
+    <p>A new complaint has been submitted to {{ site_name }}.</p>
+    <p><strong>Complaint ID:</strong> #{{ complaint.id }}</p>
+    <p><strong>Subject:</strong> "{{ complaint.subject }}"</p>
+    <p><strong>Category:</strong> {{ complaint.category.name|default:"N/A" }}</p>
+    <p><strong>Status:</strong> {{ complaint.get_status_display }}</p>
+    <p><strong>Priority:</strong> {{ complaint.get_priority_display }}</p>
+    <p><strong>Submitted By:</strong> 
+        {% if complaint.submitted_by %}
+            {{ complaint.submitted_by.get_full_name|default:complaint.submitted_by.username }} ({{ complaint.submitted_by.email }})
+        {% else %}
+            Anonymous ({{ complaint.full_name|default:"N/A" }} - {{ complaint.email|default:"N/A" }})
+        {% endif %}
+    </p>
+    <p><strong>Submitted On:</strong> {{ complaint.created_at|date:"M d, Y H:i A" }}</p>
+    <p><strong>Description:</strong></p>
+    <p style="white-space: pre-wrap;">{{ complaint.description }}</p>
+    <br>
+    <p>Please review the complaint in the admin panel: <a href="{{ admin_complaint_url }}">{{ admin_complaint_url }}</a></p>
+    <br>
+    <p>Regards,</p>
+    <p>The {{ site_name }} System</p>
+</body>
+</html>

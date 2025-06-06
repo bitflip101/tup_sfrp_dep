@@ -1,0 +1,33 @@
+{% extends 'sfrp/sfrp_base.html' %} {# Inherit from your base.html #}
+
+{% load i18n %}
+
+{% load account socialaccount %}
+
+{% block title %}{% trans "Login" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h2>{% trans "Sign Up" %}</h2>
+                </div>
+                <div class="card-body">
+                    <p>{% blocktrans %}Already have an account? Then please <a href="{{ login_url }}">sign in</a>.{% endblocktrans %}</p>
+
+                    <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                        {% csrf_token %}
+                        {{ form.as_p }} {# Renders form fields as paragraphs. Consider using form.as_bootstrap for better control #}
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                        {% endif %}
+                        <button class="btn btn-primary btn-block mt-3" type="submit">{% trans "Sign Up" %} &raquo;</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>  
+{% endblock %}

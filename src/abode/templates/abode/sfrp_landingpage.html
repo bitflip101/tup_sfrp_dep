@@ -1,0 +1,80 @@
+{% extends 'sfrp/sfrp_base.html' %}
+
+{% block title %}TUP SFRP{% endblock %}
+
+{% block content %}
+<header class="jumbotron jumbotron-fluid text-center bg-primary text-white py-2">
+    <div class="container">
+        <h3 class="display-5">Welcome to TUP School Feedback and Resolution Portal</h3>
+        <p class="lead">Your direct help(4357) line to services, support, and communication within our institution.</p>
+        <hr class="my-4 bg-white">
+        <p>Whether you need to report an issue, request assistance, make an inquiry, or report an emergency, we are here to help.</p>
+
+        {% if user.is_authenticated %}
+            <p class="mt-2">You are logged in as <strong>{{ user.get_full_name|default:user.username }}</strong>.</p>
+            <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
+            <a href="{% url 'complaints:my_complaints' %}" class="btn btn-info btn-lg mt-3 ml-3">View My Submissions</a>
+        {% else %}
+            <p class="mt-2">Please log in or register to access our services.</p>
+            <a href="{% url 'account_login' %}" class="btn btn-warning btn-lg mt-3">Login to Submit Request</a>
+            <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg mt-3 ml-3">Register Now</a>
+        {% endif %}
+    </div>
+</header>
+
+<section class="container my-2">
+    <div class="row text-center">
+        <div class="col-md-3">
+            <div class="card p-1 mb-1">
+                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                <h5>Report a Complaint</h5>
+                <p>Have an issue or concern? Let us know.</p>
+                <a href="{% if user.is_authenticated %}{% url 'unified_requests:submit_request' %}?type=complaint{% else %}{% url 'account_login' %}{% endif %}" class="btn btn-outline-secondary">Learn More</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-1 mb-1">
+                <i class="fas fa-cogs fa-2x text-info mb-2"></i>
+                <h5>Seek Service Assistance</h5>
+                <p>Request support for various institutional services.</p>
+                <a href="{% if user.is_authenticated %}{% url 'unified_requests:submit_request' %}?type=service{% else %}{% url 'account_login' %}{% endif %}" class="btn btn-outline-secondary">Learn More</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-1 mb-1">
+                <i class="fas fa-question-circle fa-2x text-primary mb-2"></i>
+                <h5>Make an Inquiry</h5>
+                <p>Ask a question or seek information.</p>
+                <a href="{% if user.is_authenticated %}{% url 'unified_requests:submit_request' %}?type=inquiry{% else %}{% url 'account_login' %}{% endif %}" class="btn btn-outline-secondary">Learn More</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-1 mb-1">
+                <i class="fas fa-hospital-alt fa-2x text-dark mb-2"></i>
+                <h5>Report an Emergency</h5>
+                <p>For urgent situations requiring immediate attention.</p>
+                <a href="{% if user.is_authenticated %}{% url 'unified_requests:submit_request' %}?type=emergency{% else %}{% url 'account_login' %}{% endif %}" class="btn btn-outline-secondary">Learn More</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container my-5 text-center">
+    <h2>Why Use Our Portal?</h2>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <h4><i class="fas fa-check-circle text-success mr-2"></i>Efficient Tracking</h4>
+            <p>Monitor the status of your requests from submission to resolution.</p>
+        </div>
+        <div class="col-md-4">
+            <h4><i class="fas fa-bell text-warning mr-2"></i>Timely Notifications</h4>
+            <p>Receive email updates on your request's progress and reminders.</p>
+        </div>
+        <div class="col-md-4">
+            <h4><i class="fas fa-shield-alt text-info mr-2"></i>Secure & Private</h4>
+            <p>Your data and submissions are handled with utmost security.</p>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

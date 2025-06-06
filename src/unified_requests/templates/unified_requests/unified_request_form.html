@@ -1,0 +1,206 @@
+{% extends 'sfrp/sfrp_base.html' %}
+
+{% block title %}Submit New Request{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Submit Your Request</h2>
+    <p>Please select the type of request you want to submit and fill out the relevant details.</p>
+
+    <form method="post" id="unifiedRequestForm">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.request_type.id_for_label }}">Request Type</label>
+            {{ form.request_type }}
+            {% if form.request_type.errors %}<div class="text-danger">{{ form.request_type.errors }}</div>{% endif %}
+        </div>
+
+        {# Anonymous Contact Fields (conditionally shown/hidden by JS) #}
+        {% if not user.is_authenticated %}
+        <div id="anonymous_contact_fields" class="p-3 mb-4 border rounded bg-light">
+            <h5 class="mb-3">Your Contact Information (for follow-up)</h5>
+            <p class="text-muted small">Since you are not logged in, please provide at least an email or phone number for us to get back to you.</p>
+            <div class="form-group">
+                <label for="{{ form.anonymous_email.id_for_label }}">Email</label>
+                {{ form.anonymous_email }}
+                {% if form.anonymous_email.errors %}<div class="text-danger">{{ form.anonymous_email.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.anonymous_email.help_text }}</small>
+            </div>
+            <div class="form-group">
+                <label for="{{ form.anonymous_phone.id_for_label }}">Phone Number (Optional)</label>
+                {{ form.anonymous_phone }}
+                {% if form.anonymous_phone.errors %}<div class="text-danger">{{ form.anonymous_phone.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.anonymous_phone.help_text }}</small>
+            </div>
+        </div>
+        {% endif %}
+
+
+        <div class="form-group" id="common_subject_field_group">
+            <label for="{{ form.subject.id_for_label }}">Subject</label>
+            {{ form.subject }}
+            {% if form.subject.errors %}<div class="text-danger">{{ form.subject.errors }}</div>{% endif %}
+            <small class="form-text text-muted">{{ form.subject.help_text }}</small>
+        </div>
+
+        {# Common Description Field - Render ONLY ONCE #}
+        <div class="form-group" id="common_description_field_group">
+            <label id="description_label" for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="text-danger">{{ form.description.errors }}</div>{% endif %}
+            <small id="description_help_text" class="form-text text-muted">{{ form.description.help_text }}</small>
+        </div>
+
+        {# Common Question Field for Inquiries - Render ONLY ONCE #}
+        <div class="form-group" id="common_question_field_group" style="display: none;">
+            <label id="question_label" for="{{ form.question.id_for_label }}">Your Question</label>
+            {{ form.question }}
+            {% if form.question.errors %}<div class="text-danger">{{ form.question.errors }}</div>{% endif %}
+            <small id="question_help_text" class="form-text text-muted">{{ form.question.help_text }}</small>
+        </div>
+
+
+        {# Complaint Specific Fields (Category & Priority) #}
+        <div id="complaint_specific_fields" style="display: none;">
+            <div class="form-group">
+                <label for="{{ form.complaint_category.id_for_label }}">Complaint Category</label>
+                {{ form.complaint_category }}
+                {% if form.complaint_category.errors %}<div class="text-danger">{{ form.complaint_category.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.complaint_priority.id_for_label }}">Priority</label>
+                {{ form.complaint_priority }}
+                {% if form.complaint_priority.errors %}<div class="text-danger">{{ form.complaint_priority.errors }}</div>{% endif %}
+            </div>
+        </div>
+
+        {# Service Assistance Specific Fields (Type) #}
+        <div id="service_specific_fields" style="display: none;">
+            <div class="form-group">
+                <label for="{{ form.service_type.id_for_label }}">Service Type</label>
+                {{ form.service_type }}
+                {% if form.service_type.errors %}<div class="text-danger">{{ form.service_type.errors }}</div>{% endif %}
+            </div>
+        </div>
+
+        {# Inquiry Specific Fields (Category) #}
+        <div id="inquiry_specific_fields" style="display: none;">
+            <div class="form-group">
+                <label for="{{ form.inquiry_category.id_for_label }}">Inquiry Category</label>
+                {{ form.inquiry_category }}
+                {% if form.inquiry_category.errors %}<div class="text-danger">{{ form.inquiry_category.errors }}</div>{% endif %}
+            </div>
+        </div>
+
+        {# Emergency Report Specific Fields (Type & Location) #}
+        <div id="emergency_specific_fields" style="display: none;">
+            <div class="form-group">
+                <label for="{{ form.emergency_type.id_for_label }}">Emergency Type</label>
+                {{ form.emergency_type }}
+                {% if form.emergency_type.errors %}<div class="text-danger">{{ form.emergency_type.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.location.id_for_label }}">Location of Emergency</label>
+                {{ form.location }}
+                {% if form.location.errors %}<div class="text-danger">{{ form.location.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.location.help_text }}</small>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Submit Request</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const requestTypeSelect = document.getElementById('id_request_type');
+
+        const commonDescriptionFieldGroup = document.getElementById('common_description_field_group');
+        const commonQuestionFieldGroup = document.getElementById('common_question_field_group');
+
+        const complaintSpecificFields = document.getElementById('complaint_specific_fields');
+        const serviceSpecificFields = document.getElementById('service_specific_fields');
+        const inquirySpecificFields = document.getElementById('inquiry_specific_fields');
+        const emergencySpecificFields = document.getElementById('emergency_specific_fields');
+
+        // References for dynamic label/help text
+        const descriptionLabel = document.getElementById('description_label');
+        const descriptionHelpText = document.getElementById('description_help_text');
+        const questionLabel = document.getElementById('question_label');
+        const questionHelpText = document.getElementById('question_help_text');
+
+        // Original help texts (from Django forms)
+        const originalDescriptionHelpText = "{{ form.description.help_text|escapejs }}";
+        const originalQuestionHelpText = "{{ form.question.help_text|escapejs }}";
+
+
+        function toggleFields() {
+            const selectedType = requestTypeSelect.value;
+
+            // Hide all specific field groups initially
+            complaintSpecificFields.style.display = 'none';
+            serviceSpecificFields.style.display = 'none';
+            inquirySpecificFields.style.display = 'none';
+            emergencySpecificFields.style.display = 'none';
+
+            // Hide both common text areas by default
+            commonDescriptionFieldGroup.style.display = 'none';
+            commonQuestionFieldGroup.style.display = 'none';
+
+
+            // Show fields based on selected type
+            if (selectedType === 'complaint') {
+                complaintSpecificFields.style.display = 'block';
+                commonDescriptionFieldGroup.style.display = 'block';
+                descriptionLabel.textContent = 'Description';
+                descriptionHelpText.textContent = 'Please describe your complaint in detail.';
+
+            } else if (selectedType === 'service') {
+                serviceSpecificFields.style.display = 'block';
+                commonDescriptionFieldGroup.style.display = 'block';
+                descriptionLabel.textContent = 'Description';
+                descriptionHelpText.textContent = 'Describe the service you are requesting.';
+
+            } else if (selectedType === 'inquiry') {
+                inquirySpecificFields.style.display = 'block';
+                commonQuestionFieldGroup.style.display = 'block';
+                // Labels/help texts for question are already specific, no need to change
+                questionLabel.textContent = 'Your Question';
+                questionHelpText.textContent = originalQuestionHelpText;
+
+
+            } else if (selectedType === 'emergency') {
+                emergencySpecificFields.style.display = 'block';
+                commonDescriptionFieldGroup.style.display = 'block';
+                descriptionLabel.textContent = 'Description of Emergency';
+                descriptionHelpText.textContent = 'Please describe the emergency in detail.';
+            }
+        }
+
+        // Initial toggle on page load (useful if form has initial data or errors)
+        toggleFields();
+
+        // Attach event listener for changes
+        requestTypeSelect.addEventListener('change', toggleFields);
+
+        // Handle pre-selected type from URL parameter (e.g., /submit/?type=complaint)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlType = urlParams.get('type');
+        if (urlType) {
+            requestTypeSelect.value = urlType;
+            toggleFields();
+        }
+    });
+</script>
+{% endblock %}

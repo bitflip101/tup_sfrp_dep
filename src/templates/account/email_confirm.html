@@ -1,0 +1,53 @@
+{% extends 'sfrp/sfrp_base.html' %} 
+{% load i18n %} {# Required by allauth templates for translation #}
+{% load account %} {# Required by allauth templates for account-specific tags #}
+
+{% block title %}{% trans "Confirm Email Address" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-sm-10">
+            <div class="card p-4 shadow-sm">
+                <div class="card-header bg-primary text-white text-center rounded-top">
+                    <h2 class="mb-0">{% trans "Confirm Email Address" %}</h2>
+                </div>
+                <div class="card-body">
+                    {% if confirmation %}
+                        {% user_display confirmation.email_address.user as user_display %}
+                        <p class="lead text-center">{% blocktrans with confirmation.email_address.email as email %}Please confirm that <a href="mailto:{{ email }}">{{ email }}</a> is an email address for user {{ user_display }}.{% endblocktrans %}</p>
+
+                        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                            {% csrf_token %}
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">{% trans "Confirm" %}</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        {% url 'account_email' as email_url %}
+                        <p class="alert alert-danger text-center">
+                            {% blocktrans %}This email confirmation link expired or is invalid. Please <a href="{{ email_url }}">issue a new email confirmation request</a>.{% endblocktrans %}
+                        </p>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center text-muted small">
+                    <p>If you did not request this email, please ignore it.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{# Add any custom CSS for this page if needed, beyond your base.html #}
+<style>
+    .card-header {
+        border-bottom: none; /* Remove default card-header border */
+    }
+    .card-body {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+</style>
+{% endblock %}

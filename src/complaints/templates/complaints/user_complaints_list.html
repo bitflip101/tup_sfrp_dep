@@ -1,0 +1,47 @@
+{% extends 'sfrp/sfrp_base.html' %}
+
+{% block title %}My Complaints{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>My Submitted Complaints</h2>
+
+    {% if complaints %}
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Subject</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Submitted On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for complaint in complaints %}
+                <tr>
+                    <td>{{ complaint.id }}</td>
+                    <td>{{ complaint.subject }}</td>
+                    <td>{{ complaint.category|default:"N/A" }}</td>
+                    <td><span class="badge bg-{{ complaint.status }}">{{ complaint.status|capfirst }}</span></td> {# You might need CSS for badges #}
+                    <td>{{ complaint.priority|capfirst }}</td>
+                    <td>{{ complaint.created_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'complaints:user_complaint_detail' complaint.pk %}" class="btn btn-sm btn-info">View</a>
+                        {# Add edit/delete links if applicable and user has permission #}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            {{ no_complaints_message|default:"You have not submitted any complaints yet." }}
+            <p><a href="{% url 'unified_requests:submit_request' %}" class="btn btn-secondary mt-3">Submit a New Complaint</a></p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

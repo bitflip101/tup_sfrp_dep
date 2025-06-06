@@ -1,0 +1,17 @@
+{% extends 'accounts/accounts_base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="text-center my-5">
+    <h1>Welcome to SFRP - TUP!</h1>
+    <p class="lead">YOUR SCHOOL 4357/HELP LINE!</p>
+
+    {% if user.is_authenticated %}
+        <p>You are logged in as: <strong>{{ user.email }}</strong></p>
+        <p><a href="{% url 'logout' %}" class="btn btn-danger">Logout</a></p>
+    {% else %}
+        <p>Please <a href="{% url 'login' %}">login</a> or <a href="{% url 'register' %}">register</a> to continue.</p>
+    {% endif %}
+</div>
+{% endblock %}
