@@ -51,7 +51,7 @@
             </div>
 
             <p><strong>Category:</strong> {{ complaint.category.name|default:"N/A" }}</p>
-            <p><strong>Submitted On:</strong> {{ complaint.created_at|date:"M d, Y H:i A" }}</p>
+            <p><strong>Submitted On:</strong> {{ complaint.submitted_at|date:"M d, Y H:i A" }}</p>
             <p><strong>Last Updated:</strong> {{ complaint.updated_at|date:"M d, Y H:i A" }}</p>
 
             {% if complaint.assigned_to %}
@@ -107,7 +107,7 @@
                                 {% else %}
                                     System
                                 {% endif %}
-                                <small class="text-muted float-end">{{ update.created_at|date:"M d, Y H:i A" }}</small>
+                                <small class="text-muted float-end">{{ update.submitted_at|date:"M d, Y H:i A" }}</small>
                             </h6>
                             <p class="card-text small text-muted mb-2">Update Type: {{ update.get_update_type_display }}</p>
                             <p class="card-text">{{ update.message|linebreaksbr }}</p>

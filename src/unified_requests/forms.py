@@ -1,9 +1,12 @@
 # unified_requests/forms.py
 from django import forms
 from complaints.models import ComplaintCategory
-from services.models import ServiceType
-from inquiries.models import InquiryCategory
-from emergencies.models import EmergencyType
+from services.models import ServiceRequest, ServiceType
+from inquiries.models import Inquiry, InquiryCategory
+from emergencies.models import EmergencyReport, EmergencyType
+
+from django.core.exceptions import ValidationError
+from django.urls import reverse_lazy # Use for generating URLs for error messages
 
 class UnifiedRequestForm(forms.Form):
     """
@@ -23,6 +26,50 @@ class UnifiedRequestForm(forms.Form):
         label="What kind of request are you submitting?",
         widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_request_type'})
     )
+
+    ##-Checkbox for "Report Anonymously"
+    report_anonymously = forms.BooleanField(
+        required = False, # A checkbox that toggle value, check=True, notChedked = False
+        label = "Report Anonymously",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input','id':'id_report_anonymously'}),
+        help_text = "Check this box if you wish to link/log this request to your user account."
+    )
+
+     # Fields for anonymous submissions
+    anonymous_full_name = forms.CharField(
+        max_length=255,
+        required=False, # Conditionally required in clean()
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        help_text="Your full name (if not logged in)."
+    )
+    anonymous_email = forms.EmailField(
+        required=False, # Conditionally required in clean()
+        widget=forms.EmailInput(attrs={'class': 'form-control'}),
+        help_text="Your email for follow-up (required if not logged in)."
+    )
+    anonymous_phone = forms.CharField(
+        max_length=20,
+        required=False, # Conditionally required in clean()
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        help_text="Your phone number for follow-up (optional)."
+    )
+
+    # def __init__(self, *args, **kwargs):
+    #     # Extract the request from kwargs, default to None
+    #     self.request = kwargs.pop('request', None)
+    #     super().__init__(*args, **kwargs)
+
+    #     # Conditionally hide/show fields or set their initial state
+    #     # In a real scenario, these fields would be hidden/shown via JS in the template
+    #     # Here we just make sure they are not required for logged-in users
+    #     if self.request and self.request.user.is_authenticated:
+    #         self.fields['anonymous_full_name'].required = False
+    #         self.fields['anonymous_email'].required = False
+    #         self.fields['anonymous_phone'].required = False
+    #     else: # For anonymous users
+    #         # self.fields['anonymous_full_name'].required = True # Decide if name is strictly required
+    #         self.fields['anonymous_email'].required = True # Email is essential for contact
+    #         self.fields['anonymous_phone'].required = False
 
     # Common fields
     subject = forms.CharField(
@@ -54,6 +101,12 @@ class UnifiedRequestForm(forms.Form):
         ],
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    attachments = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={'multiple': False, 'class': 'form-control-file'}),
+        help_text="Attach relevant files (e.g., photos, documents)."
     )
 
     # Service Assistance fields
@@ -91,12 +144,82 @@ class UnifiedRequestForm(forms.Form):
         help_text="Specific location of the emergency (e.g., Building A, Room 101)."
     )
 
+    # NEW: Checkbox for Privacy Policy Agreement
+    privacy_policy_agreement = forms.BooleanField(
+        required=True, # This field MUST be checked
+        label="I agree to the Privacy Policy",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_privacy_policy_agreement'}),
+        help_text="Please check this box if you want to proceed with your submission."
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
+        # Initial required state for anonymous fields based on user authentication
+        # The JS will handle the dynamic show/hide and client-side 'required' attribute,
+        # but backend validation needs to enforce the logic.
+        if self.request and self.request.user.is_authenticated:
+            # For logged-in users, anonymous contact fields are generally not needed
+            # unless they explicitly choose to report anonymously.
+            self.fields['anonymous_full_name'].required = False
+            self.fields['anonymous_email'].required = False
+            self.fields['anonymous_phone'].required = False
+            # Default to not anonymous for logged-in users if not specified
+            self.fields['report_anonymously'].initial = False
+        else:
+            # For truly anonymous users (not logged in), they must either choose to be anonymous
+            # or be prompted to login/register. The 'report_anonymously' field is visible.
+            # We don't set 'required' here, as clean() method handles the conditional logic.
+            pass
+
     def clean(self):
         cleaned_data = super().clean()
         request_type = cleaned_data.get('request_type')
         subject = cleaned_data.get('subject')
         description = cleaned_data.get('description') # This will be main content for C, S, E
         question = cleaned_data.get('question')      # This will be main content for I
+
+        report_anonymously = cleaned_data.get('report_anonymously')
+        privacy_policy_agreement = cleaned_data.get('privacy_policy_agreement')
+
+        anonymous_full_name = cleaned_data.get('anonymous_full_name')
+        anonymous_email = cleaned_data.get('anonymous_email')
+        anonymous_phone = cleaned_data.get('anonymous_phone')
+
+        # --- NEW: Privacy Policy Agreement Validation ---
+        if not privacy_policy_agreement:
+            self.add_error('privacy_policy_agreement', "You must agree to the Privacy Policy to proceed.")
+
+        # --- NEW: Anonymous Submission Logic ---
+        if self.request and not self.request.user.is_authenticated:
+            # User is NOT authenticated (is anonymous)
+            if not report_anonymously:
+                # If an anonymous user does NOT check "Report Anonymously",
+                # they must be prompted to log in or register.
+                login_url = reverse_lazy('account_login') # Assuming 'account_login' from django-allauth
+                register_url = reverse_lazy('account_signup') # Assuming 'account_signup' from django-allauth
+
+                self.add_error(
+                    None, # This makes it a non-field error
+                    ValidationError(
+                        f"You must either <a href='{login_url}'>log in</a>, "
+                        f"<a href='{register_url}'>register</a>, or check "
+                        f"'Report Anonymously' to submit your request.",
+                        code='not_authenticated_and_not_anonymous'
+                    )
+                )
+            else:
+                # User is NOT authenticated AND HAS checked "Report Anonymously"
+                if not anonymous_email:
+                    self.add_error('anonymous_email', "An email address is required for follow-up if reporting anonymously.")
+                # anonymous_full_name and anonymous_phone remain optional here
+        elif self.request and self.request.user.is_authenticated:
+            # User IS authenticated
+            # If they check 'report_anonymously', we respect that.
+            # Otherwise, their user account will be linked. No specific anonymous field validation needed here
+            # as the view will handle submitted_by based on the checkbox.
+            pass
 
         # General validation for required common fields
         if not request_type:
@@ -114,6 +237,8 @@ class UnifiedRequestForm(forms.Form):
                 self.add_error('complaint_priority', "Priority is required for complaints.")
             # Clear other fields to avoid confusion later
             cleaned_data['service_type'] = None
+            cleaned_data['priority'] = None
+            cleaned_data['due_date'] = None
             cleaned_data['inquiry_category'] = None
             cleaned_data['question'] = None
             cleaned_data['emergency_type'] = None
@@ -127,6 +252,10 @@ class UnifiedRequestForm(forms.Form):
             # Clear other fields
             cleaned_data['complaint_category'] = None
             cleaned_data['complaint_priority'] = None
+            cleaned_data['location_address'] = None
+            cleaned_data['latitude'] = None
+            cleaned_data['longitude'] = None
+            cleaned_data['attachments'] = None
             cleaned_data['inquiry_category'] = None
             cleaned_data['question'] = None
             cleaned_data['emergency_type'] = None
@@ -140,12 +269,16 @@ class UnifiedRequestForm(forms.Form):
             # Clear other fields
             cleaned_data['complaint_category'] = None
             cleaned_data['complaint_priority'] = None
+            cleaned_data['location_address'] = None
+            cleaned_data['latitude'] = None
+            cleaned_data['longitude'] = None
+            cleaned_data['attachments'] = None
             cleaned_data['service_type'] = None
-            cleaned_data['description'] = None
+            cleaned_data['priority'] = None
+            cleaned_data['due_date'] = None
             cleaned_data['emergency_type'] = None
             cleaned_data['location'] = None
-            # Set description to question for easier processing in view
-            cleaned_data['description'] = question # Use question for processing
+            cleaned_data['description'] = question # For consistency, you might map question to description if models share it
 
         elif request_type == 'emergency':
             if not cleaned_data.get('emergency_type'):
@@ -157,8 +290,20 @@ class UnifiedRequestForm(forms.Form):
             # Clear other fields
             cleaned_data['complaint_category'] = None
             cleaned_data['complaint_priority'] = None
+            cleaned_data['location_address'] = None
+            cleaned_data['latitude'] = None
+            cleaned_data['longitude'] = None
+            cleaned_data['attachments'] = None
             cleaned_data['service_type'] = None
+            cleaned_data['priority'] = None
+            cleaned_data['due_date'] = None
             cleaned_data['inquiry_category'] = None
             cleaned_data['question'] = None
+
+            # If user is authenticated and not reporting anonymously, ensure anonymous fields are cleared
+        if self.request and self.request.user.is_authenticated and not report_anonymously:
+            cleaned_data['anonymous_full_name'] = None
+            cleaned_data['anonymous_email'] = None
+            cleaned_data['anonymous_phone'] = None
 
         return cleaned_data

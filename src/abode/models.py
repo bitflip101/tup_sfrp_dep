@@ -3,14 +3,14 @@ from django.db import models
 class TimeStampModel(models.Model):
     """
     An abstract base class model that provides self-updating
-    'created_at' and 'updated_at' fields.
+    'submitted_at' and 'updated_at' fields.
 
     This model is designed to be inherited by other models that need
     automatic timestamping for creation and last modification times.
     Because it's an abstract class, it won't create a separate table in the database;
     instead, its fields will be included in the tables of any models that inherit from it.
     """
-    created_at = models.DateTimeField(
+    submitted_at = models.DateTimeField(
         auto_now_add=True,  # Automatically sets the field to the current datetime when the object is first created.
         editable=False,     # Makes this field non-editable in the Django admin and forms.
         verbose_name="Created At",
@@ -31,7 +31,7 @@ class TimeStampModel(models.Model):
         """
         abstract = True         # This is crucial! It tells Django not to create a separate table for this model.
                                 # Instead, its fields will be added to the concrete models that inherit from it.
-        ordering = ['-created_at'] # Default ordering for models inheriting this, showing newest first.
+        ordering = ['-submitted_at'] # Default ordering for models inheriting this, showing newest first.
                                    # You can override this in child models' Meta classes.
         verbose_name = "Timestamped Object" # A human-readable name for the model in the admin, if it were concrete.
         verbose_name_plural = "Timestamped Objects"
@@ -54,4 +54,4 @@ class TimeStampModel(models.Model):
 #         verbose_name = "Complaint"
 #         verbose_name_plural = "Complaints"
 #         # You can override ordering here if needed:
-#         # ordering = ['status', '-created_at']
+#         # ordering = ['status', '-submitted_at']

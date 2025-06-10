@@ -27,7 +27,7 @@
                     <td>{{ complaint.category|default:"N/A" }}</td>
                     <td><span class="badge bg-{{ complaint.status }}">{{ complaint.status|capfirst }}</span></td> {# You might need CSS for badges #}
                     <td>{{ complaint.priority|capfirst }}</td>
-                    <td>{{ complaint.created_at|date:"M d, Y H:i" }}</td>
+                    <td>{{ complaint.submitted_at|date:"M d, Y H:i" }}</td>
                     <td>
                         <a href="{% url 'complaints:user_complaint_detail' complaint.pk %}" class="btn btn-sm btn-info">View</a>
                         {# Add edit/delete links if applicable and user has permission #}

@@ -3,6 +3,7 @@ from django.db import models
 from django.conf import settings
 from django.urls import reverse
 from abode.models import TimeStampModel # From abode app's models.py
+from unified_requests.constants import STATUS_CHOICES # NEW: Import STATUS_CHOICES
 
 class ComplaintCategory(models.Model):
     """
@@ -23,24 +24,17 @@ class ComplaintCategory(models.Model):
     def __str__(self):
         return self.name
 
-class Complaint(TimeStampModel):
+class Complaint(models.Model):
     """
     Represents a single complaint submitted by a user.
     """
-    STATUS_CHOICES = [
-        ('new', 'New'),
-        ('in_progress', 'In Progress'),
-        ('resolved', 'Resolved'),
-        ('closed', 'Closed'),
-        ('reopened', 'Reopened'),
-    ]
-
-    PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('urgent', 'Urgent'),
-    ]
+    # STATUS_CHOICES = [
+    #     ('new', 'New'),
+    #     ('in_progress', 'In Progress'),
+    #     ('resolved', 'Resolved'),
+    #     ('closed', 'Closed'),
+    #     ('reopened', 'Reopened'),
+    # ]
 
     # --- Submission Details ---
     submitted_by = models.ForeignKey(
@@ -93,9 +87,15 @@ class Complaint(TimeStampModel):
     )
 
     # --- Status & Priority ---
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
+        choices=STATUS_CHOICES, # Using the imported choices
         default='new', # Initial status for new complaints
         help_text="Current status of the complaint."
     )
@@ -136,14 +136,18 @@ class Complaint(TimeStampModel):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
 
-    class Meta(TimeStampModel.Meta):
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta():
         verbose_name = "Complaint"
         verbose_name_plural = "Complaints"
+        ordering = ['-submitted_at'] # Order newest first
         # Inherits ordering from TimeStampModel.Meta which is ['-created_at']
         # You can override if needed, e.g., ['status', '-created_at']
 
     def __str__(self):
-        return f"Complaint #{self.id}: {self.subject} ({self.status})"
+        return f"Complaint #{self.id}: {self.subject} ({self.get_status_display()})"
     
     def get_absolute_url(self):
         return reverse('complaints:complaint_detail', args=[str(self.pk)])
@@ -154,9 +158,9 @@ class Complaint(TimeStampModel):
         # This prevents complaints with no info from being 'anonymous'.
         return self.submitted_by is None and (self.full_name or self.email or self.phone_number)
     
-    @property
-    def submitted_at(self):
-        return self.created_at
+    # @property
+    # def submitted_at(self):
+    #     return self.created_at
 
 class ComplaintUpdate(TimeStampModel):
     """
@@ -205,14 +209,14 @@ class ComplaintUpdate(TimeStampModel):
     # Store old/new values for specific changes for audit trails
     old_status = models.CharField(
         max_length=20,
-        choices=Complaint.STATUS_CHOICES,
+        choices=STATUS_CHOICES,
         blank=True,
         null=True,
         help_text="Old status if the update was a status change."
     )
     new_status = models.CharField(
         max_length=20,
-        choices=Complaint.STATUS_CHOICES,
+        choices=STATUS_CHOICES,
         blank=True,
         null=True,
         help_text="New status if the update was a status change."
@@ -250,7 +254,7 @@ class ComplaintUpdate(TimeStampModel):
         verbose_name = "Complaint Update"
         verbose_name_plural = "Complaint Updates"
         # Always order updates by creation time (ascending) to see history chronologically
-        ordering = ['created_at']
+        ordering = ['submitted_at']
 
     def __str__(self):
         # Improve __str__ for better readability based on update type

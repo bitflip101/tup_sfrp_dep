@@ -7,13 +7,13 @@
     <h2>Submit Your Request</h2>
     <p>Please select the type of request you want to submit and fill out the relevant details.</p>
 
-    <form method="post" id="unifiedRequestForm">
+    <form method="post" id="unifiedRequestForm" enctype="multipart/form-data"> {# Keep enctype for file uploads #}
         {% csrf_token %}
 
         {% if form.non_field_errors %}
             <div class="alert alert-danger" role="alert">
                 {% for error in form.non_field_errors %}
-                    {{ error }}
+                    {{ error|safe }} {# Use 'safe' filter if your non_field_errors include HTML like <a> tags #}
                 {% endfor %}
             </div>
         {% endif %}
@@ -24,11 +24,27 @@
             {% if form.request_type.errors %}<div class="text-danger">{{ form.request_type.errors }}</div>{% endif %}
         </div>
 
+        {# "Report Anonymously" Checkbox #}
+        <div class="form-check mt-3">
+            {{ form.report_anonymously }}
+            <label class="form-check-label" for="{{ form.report_anonymously.id_for_label }}">
+                {{ form.report_anonymously.label }}
+            </label>
+            {% if form.report_anonymously.errors %}<div class="text-danger">{{ form.report_anonymously.errors }}</div>{% endif %}
+            <small class="form-text text-muted">{{ form.report_anonymously.help_text }}</small>
+        </div>
+
         {# Anonymous Contact Fields (conditionally shown/hidden by JS) #}
-        {% if not user.is_authenticated %}
-        <div id="anonymous_contact_fields" class="p-3 mb-4 border rounded bg-light">
+        {# This section is crucial for anonymous submissions #}
+        <div id="anonymous_contact_fields" class="p-3 mb-4 border rounded bg-light" style="display: none;"> {# Initially hidden #}
             <h5 class="mb-3">Your Contact Information (for follow-up)</h5>
-            <p class="text-muted small">Since you are not logged in, please provide at least an email or phone number for us to get back to you.</p>
+            <p class="text-muted small">Required for anonymous submissions. Otherwise, your logged-in profile email will be used.</p>
+            <div class="form-group">
+                <label for="{{ form.anonymous_full_name.id_for_label }}">Your Full Name (Optional)</label>
+                {{ form.anonymous_full_name }}
+                {% if form.anonymous_full_name.errors %}<div class="text-danger">{{ form.anonymous_full_name.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.anonymous_full_name.help_text }}</small>
+            </div>
             <div class="form-group">
                 <label for="{{ form.anonymous_email.id_for_label }}">Email</label>
                 {{ form.anonymous_email }}
@@ -42,81 +58,145 @@
                 <small class="form-text text-muted">{{ form.anonymous_phone.help_text }}</small>
             </div>
         </div>
-        {% endif %}
 
+        {# This section provides visual guidance if user is not logged in and not reporting anonymously #}
+        <div id="login_register_prompt" class="alert alert-info mt-3" style="display: none;">
+            <p>To submit this request without reporting anonymously, please <a href="{{ login_url }}">Login</a> or <a href="{{ register_url }}">Register</a>.</p>
+        </div>
 
-        <div class="form-group" id="common_subject_field_group">
+        <hr> {# Separator for visual clarity #}
+
+        {# Common Fields for all request types (Subject, Description/Question) #}
+        <div class="form-group mt-3">
             <label for="{{ form.subject.id_for_label }}">Subject</label>
             {{ form.subject }}
             {% if form.subject.errors %}<div class="text-danger">{{ form.subject.errors }}</div>{% endif %}
             <small class="form-text text-muted">{{ form.subject.help_text }}</small>
         </div>
 
-        {# Common Description Field - Render ONLY ONCE #}
-        <div class="form-group" id="common_description_field_group">
+        <div id="common_description_field_group" class="form-group mt-3" style="display: none;">
             <label id="description_label" for="{{ form.description.id_for_label }}">Description</label>
             {{ form.description }}
             {% if form.description.errors %}<div class="text-danger">{{ form.description.errors }}</div>{% endif %}
-            <small id="description_help_text" class="form-text text-muted">{{ form.description.help_text }}</small>
+            <small id="description_help_text" class="form-text text-muted"></small>
         </div>
 
-        {# Common Question Field for Inquiries - Render ONLY ONCE #}
-        <div class="form-group" id="common_question_field_group" style="display: none;">
+        <div id="common_question_field_group" class="form-group mt-3" style="display: none;">
             <label id="question_label" for="{{ form.question.id_for_label }}">Your Question</label>
             {{ form.question }}
             {% if form.question.errors %}<div class="text-danger">{{ form.question.errors }}</div>{% endif %}
             <small id="question_help_text" class="form-text text-muted">{{ form.question.help_text }}</small>
         </div>
 
+        <hr> {# Separator for visual clarity #}
 
-        {# Complaint Specific Fields (Category & Priority) #}
-        <div id="complaint_specific_fields" style="display: none;">
+        {# Complaint Specific Fields #}
+        <div id="complaint_specific_fields" class="p-3 mb-4 border rounded bg-light" style="display: none;">
+            <h5 class="mb-3">Complaint Details</h5>
             <div class="form-group">
-                <label for="{{ form.complaint_category.id_for_label }}">Complaint Category</label>
+                <label for="{{ form.complaint_category.id_for_label }}">Category</label>
                 {{ form.complaint_category }}
                 {% if form.complaint_category.errors %}<div class="text-danger">{{ form.complaint_category.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.complaint_category.help_text }}</small>
             </div>
-            <div class="form-group">
+            <div class="form-group mt-3">
                 <label for="{{ form.complaint_priority.id_for_label }}">Priority</label>
                 {{ form.complaint_priority }}
                 {% if form.complaint_priority.errors %}<div class="text-danger">{{ form.complaint_priority.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.complaint_priority.help_text }}</small>
+            </div>
+            <!-- <div class="form-group mt-3">
+                <label for="{{ form.location_address.id_for_label }}">Location (Optional)</label>
+                {{ form.location_address }}
+                {% if form.location_address.errors %}<div class="text-danger">{{ form.location_address.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.location_address.help_text }}</small>
+            </div> -->
+            <!-- <div class="row mt-3">
+                <div class="col-md-6 form-group">
+                    <label for="{{ form.latitude.id_for_label }}">Latitude (Optional)</label>
+                    {{ form.latitude }}
+                    {% if form.latitude.errors %}<div class="text-danger">{{ form.latitude.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="{{ form.longitude.id_for_label }}">Longitude (Optional)</label>
+                    {{ form.longitude }}
+                    {% if form.longitude.errors %}<div class="text-danger">{{ form.longitude.errors }}</div>{% endif %}
+                </div>
+            </div> -->
+            <div class="form-group mt-3">
+                <label for="{{ form.attachments.id_for_label }}">Attachment (Optional)</label>
+                {{ form.attachments }}
+                {% if form.attachments.errors %}<div class="text-danger">{{ form.attachments.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.attachments.help_text }}</small>
             </div>
         </div>
 
-        {# Service Assistance Specific Fields (Type) #}
-        <div id="service_specific_fields" style="display: none;">
+        {# Service Request Specific Fields #}
+        <div id="service_specific_fields" class="p-3 mb-4 border rounded bg-light" style="display: none;">
+            <h5 class="mb-3">Service Request Details</h5>
             <div class="form-group">
                 <label for="{{ form.service_type.id_for_label }}">Service Type</label>
                 {{ form.service_type }}
                 {% if form.service_type.errors %}<div class="text-danger">{{ form.service_type.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.service_type.help_text }}</small>
+            </div>
+            <div class="form-group mt-3">
+                <label for="{{ form.priority.id_for_label }}">Priority (Optional)</label>
+                {{ form.priority }}
+                {% if form.priority.errors %}<div class="text-danger">{{ form.priority.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.priority.help_text }}</small>
+            </div>
+            <div class="form-group mt-3">
+                <label for="{{ form.due_date.id_for_label }}">Due Date (Optional)</label>
+                {{ form.due_date }}
+                {% if form.due_date.errors %}<div class="text-danger">{{ form.due_date.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.due_date.help_text }}</small>
             </div>
         </div>
 
-        {# Inquiry Specific Fields (Category) #}
-        <div id="inquiry_specific_fields" style="display: none;">
+        {# Inquiry Specific Fields #}
+        <div id="inquiry_specific_fields" class="p-3 mb-4 border rounded bg-light" style="display: none;">
+            <h5 class="mb-3">Inquiry Details</h5>
             <div class="form-group">
-                <label for="{{ form.inquiry_category.id_for_label }}">Inquiry Category</label>
+                <label for="{{ form.inquiry_category.id_for_label }}">Category</label>
                 {{ form.inquiry_category }}
                 {% if form.inquiry_category.errors %}<div class="text-danger">{{ form.inquiry_category.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.inquiry_category.help_text }}</small>
             </div>
         </div>
 
-        {# Emergency Report Specific Fields (Type & Location) #}
-        <div id="emergency_specific_fields" style="display: none;">
+        {# Emergency Report Specific Fields #}
+        <div id="emergency_specific_fields" class="p-3 mb-4 border rounded bg-light" style="display: none;">
+            <h5 class="mb-3">Emergency Details</h5>
             <div class="form-group">
                 <label for="{{ form.emergency_type.id_for_label }}">Emergency Type</label>
                 {{ form.emergency_type }}
                 {% if form.emergency_type.errors %}<div class="text-danger">{{ form.emergency_type.errors }}</div>{% endif %}
+                <small class="form-text text-muted">{{ form.emergency_type.help_text }}</small>
             </div>
-            <div class="form-group">
-                <label for="{{ form.location.id_for_label }}">Location of Emergency</label>
+            <div class="form-group mt-3">
+                <label for="{{ form.location.id_for_label }}">Specific Location of Emergency</label>
                 {{ form.location }}
                 {% if form.location.errors %}<div class="text-danger">{{ form.location.errors }}</div>{% endif %}
                 <small class="form-text text-muted">{{ form.location.help_text }}</small>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mt-3">Submit Request</button>
+        <hr> {# Separator for visual clarity #}
+
+        {# NEW: Privacy Policy Agreement Checkbox #}
+        <div class="form-check mt-4">
+            {{ form.privacy_policy_agreement }}
+            <label class="form-check-label" for="{{ form.privacy_policy_agreement.id_for_label }}">
+                {{ form.privacy_policy_agreement.label }}
+                <a href="{% url 'abode:privacy_policy' %}" target="_blank" class="text-primary small">(Read Privacy Policy)</a>
+            </label>
+            {% if form.privacy_policy_agreement.errors %}<div class="text-danger">{{ form.privacy_policy_agreement.errors }}</div>{% endif %}
+            <small class="form-text text-muted">{{ form.privacy_policy_agreement.help_text }}</small>
+        </div>
+
+
+        <button type="submit" class="btn btn-primary mt-3" id="submitButton" disabled>Submit Request</button> {# Submit button initially disabled #}
     </form>
 </div>
 {% endblock %}
@@ -125,6 +205,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const requestTypeSelect = document.getElementById('id_request_type');
+        const reportAnonymouslyCheckbox = document.getElementById('id_report_anonymously'); // NEW
+        const privacyPolicyCheckbox = document.getElementById('id_privacy_policy_agreement'); // NEW
+        const submitButton = document.getElementById('submitButton'); // NEW
 
         const commonDescriptionFieldGroup = document.getElementById('common_description_field_group');
         const commonQuestionFieldGroup = document.getElementById('common_question_field_group');
@@ -134,18 +217,57 @@
         const inquirySpecificFields = document.getElementById('inquiry_specific_fields');
         const emergencySpecificFields = document.getElementById('emergency_specific_fields');
 
-        // References for dynamic label/help text
+        const anonymousContactFields = document.getElementById('anonymous_contact_fields');
+        const loginRegisterPrompt = document.getElementById('login_register_prompt'); // NEW
+
+        // References for dynamic label/help text (assuming these exist and are in the common fields)
         const descriptionLabel = document.getElementById('description_label');
         const descriptionHelpText = document.getElementById('description_help_text');
         const questionLabel = document.getElementById('question_label');
         const questionHelpText = document.getElementById('question_help_text');
 
-        // Original help texts (from Django forms)
+        // Original help texts from Django forms (make sure these variables are correctly populated by Django)
         const originalDescriptionHelpText = "{{ form.description.help_text|escapejs }}";
         const originalQuestionHelpText = "{{ form.question.help_text|escapejs }}";
 
+        // Check if user is authenticated (passed from Django context)
+        const isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
 
-        function toggleFields() {
+        // Function to update submit button state based on privacy policy checkbox
+        function updateSubmitButtonState() {
+            submitButton.disabled = !privacyPolicyCheckbox.checked;
+        }
+
+        // Function to toggle visibility of anonymous contact fields and login/register prompt
+        function toggleAnonymousFlow() {
+            if (isAuthenticated) {
+                // If user is authenticated, always hide login/register prompt
+                loginRegisterPrompt.style.display = 'none';
+                // Anonymous contact fields are shown ONLY if 'Report Anonymously' is checked
+                if (reportAnonymouslyCheckbox.checked) {
+                    anonymousContactFields.style.display = 'block';
+                } else {
+                    anonymousContactFields.style.display = 'none';
+                }
+            } else {
+                // If user is NOT authenticated
+                if (reportAnonymouslyCheckbox.checked) {
+                    // Reporting anonymously: show anonymous contact fields, hide login/register prompt
+                    anonymousContactFields.style.display = 'block';
+                    loginRegisterPrompt.style.display = 'none';
+                } else {
+                    // NOT reporting anonymously: hide anonymous contact fields, show login/register prompt
+                    anonymousContactFields.style.display = 'none';
+                    loginRegisterPrompt.style.display = 'block';
+                }
+            }
+            // You might want to toggle 'required' attribute on anonymous_email here client-side
+            // document.getElementById('id_anonymous_email').required = reportAnonymouslyCheckbox.checked;
+        }
+
+
+        // Main function to toggle all fields based on request type and authentication status
+        function toggleAllFields() {
             const selectedType = requestTypeSelect.value;
 
             // Hide all specific field groups initially
@@ -158,6 +280,8 @@
             commonDescriptionFieldGroup.style.display = 'none';
             commonQuestionFieldGroup.style.display = 'none';
 
+            // Always call the anonymous flow toggler
+            toggleAnonymousFlow();
 
             // Show fields based on selected type
             if (selectedType === 'complaint') {
@@ -175,10 +299,8 @@
             } else if (selectedType === 'inquiry') {
                 inquirySpecificFields.style.display = 'block';
                 commonQuestionFieldGroup.style.display = 'block';
-                // Labels/help texts for question are already specific, no need to change
                 questionLabel.textContent = 'Your Question';
                 questionHelpText.textContent = originalQuestionHelpText;
-
 
             } else if (selectedType === 'emergency') {
                 emergencySpecificFields.style.display = 'block';
@@ -188,18 +310,27 @@
             }
         }
 
-        // Initial toggle on page load (useful if form has initial data or errors)
-        toggleFields();
+        // --- Event Listeners ---
+        requestTypeSelect.addEventListener('change', toggleAllFields);
+        reportAnonymouslyCheckbox.addEventListener('change', toggleAllFields); // Re-evaluate all fields on anonymous checkbox change
+        privacyPolicyCheckbox.addEventListener('change', updateSubmitButtonState); // Listen to privacy policy checkbox
 
-        // Attach event listener for changes
-        requestTypeSelect.addEventListener('change', toggleFields);
+        // --- Initial State on Load ---
+        // If the form was submitted with errors, the 'reportAnonymouslyCheckbox.checked'
+        // might already be true from previous form data. Respect that.
+        // If user is anonymous, default 'Report Anonymously' to checked to guide them.
+        if (!isAuthenticated && !reportAnonymouslyCheckbox.checked) {
+             reportAnonymouslyCheckbox.checked = true;
+        }
+        toggleAllFields(); // Call on load to set initial state of all fields
+        updateSubmitButtonState(); // Call on load to set initial state of submit button
 
         // Handle pre-selected type from URL parameter (e.g., /submit/?type=complaint)
         const urlParams = new URLSearchParams(window.location.search);
         const urlType = urlParams.get('type');
         if (urlType) {
             requestTypeSelect.value = urlType;
-            toggleFields();
+            toggleAllFields(); // Re-call to ensure correct fields are shown for URL type
         }
     });
 </script>

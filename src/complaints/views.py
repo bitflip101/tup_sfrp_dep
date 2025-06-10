@@ -42,7 +42,7 @@ class UserComplaintListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Filter complaints to show only those submitted by the logged-in user
-        return Complaint.objects.filter(submitted_by=self.request.user).order_by('-created_at')
+        return Complaint.objects.filter(submitted_by=self.request.user).order_by('-submitted_at')
 
 class UserComplaintDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     """
@@ -60,7 +60,7 @@ class UserComplaintDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['updates'] = self.object.updates.filter(is_public=True).order_by('created_at')
+        context['updates'] = self.object.updates.filter(is_public=True).order_by('submitted_at')
         return context
 
 # --- Admin-Facing Views ---
@@ -81,7 +81,7 @@ class AdminComplaintListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
     def get_queryset(self):
         # Optional: Add filters for status, category, assigned_to
-        queryset = Complaint.objects.all().order_by('-created_at')
+        queryset = Complaint.objects.all().order_by('-submitted_at')
         status_filter = self.request.GET.get('status')
         if status_filter:
             queryset = queryset.filter(status=status_filter)
@@ -109,7 +109,7 @@ class AdminComplaintDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailVi
         context = super().get_context_data(**kwargs)
         context['update_form'] = ComplaintUpdateForm()
         context['admin_update_form'] = ComplaintAdminUpdateForm(instance=self.object)
-        context['updates'] = self.object.updates.all().order_by('created_at') # All updates for admin
+        context['updates'] = self.object.updates.all().order_by('submitted_at') # All updates for admin
         return context
 
     def post(self, request, *args, **kwargs):

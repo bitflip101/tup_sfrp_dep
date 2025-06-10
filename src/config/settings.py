@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +36,8 @@ INSTALLED_APPS = [
     'emergencies',
     'unified_requests',
     'notifications',
+    'attachments',
+    'support_dashboard',
 
     # allauth apps
     'allauth',
@@ -56,8 +59,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
-import os
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -75,7 +76,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -224,3 +224,7 @@ ADMINS = [
 ]
 
 PROJECT_NAME = "SFRP-TUP HelpLine"
+
+# Media files (for user-uploaded content)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

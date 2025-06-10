@@ -34,6 +34,25 @@ class EmergencyReport(TimeStampModel):
         on_delete=models.CASCADE,
         related_name='emergency_reports_submitted'
     )
+
+    full_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Full name of the submitter (for anonymous or guest submissions)."
+    )
+    email = models.EmailField(
+        blank=True,
+        null=True,
+        help_text="Email address of the submitter (for anonymous or guest submissions)."
+    )
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="Phone number of the submitter (for anonymous or guest submissions)."
+    )
+
     emergency_type = models.ForeignKey(
         EmergencyType,
         on_delete=models.SET_NULL,
@@ -41,6 +60,15 @@ class EmergencyReport(TimeStampModel):
         blank=True,
         related_name='emergency_reports'
     )
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='emergency_requests_assigned',
+        help_text="Admin/Staff member assigned to this service request."
+    )
+
     location = models.CharField(max_length=255, help_text="Specific location of the emergency.")
     description = models.TextField(help_text="Details of the emergency.")
     status = models.CharField(
@@ -62,7 +90,7 @@ class EmergencyReport(TimeStampModel):
     class Meta:
         verbose_name = "Emergency Report"
         verbose_name_plural = "Emergency Reports"
-        ordering = ['-created_at']
+        ordering = ['-submitted_at']
 
     def __str__(self):
         return f"Emergency #{self.id}: {self.emergency_type.name} at {self.location}"

@@ -3,207 +3,62 @@ from django.utils import timezone
 from .models import ComplaintCategory, Complaint, ComplaintUpdate
 
 # --- NEW: Custom List Filter for Anonymous Submissions ---
-class AnonymousSubmissionFilter(admin.SimpleListFilter):
-    title = 'Anonymous Submission' # Human-readable title for the filter
-    parameter_name = 'is_anonymous' # URL parameter name
+@admin.register(Complaint)
+class ComplaintAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'subject',
+        'category',
+        'status',         # Display status in list view
+        'assigned_to',    # Display assigned person in list view
+        'submitted_by',
+        'submitted_at',
+        'priority',
+    )
+    list_filter = (
+        'status',         # Allow filtering by status
+        'category',
+        'priority',
+        'assigned_to',    # Allow filtering by assigned person
+        'submitted_at',
+    )
+    search_fields = (
+        'subject',
+        'description',
+        'location_address',
+        'submitted_by__email', # Search by submitter's email
+        'full_name', # Search by anonymous name
+        'email',     # Search by anonymous email
+    )
+    # Fields to show and their order in the detail view
+    fieldsets = (
+        ('Request Details', {
+            'fields': ('request_type', 'subject', 'description', 'category', 'priority', 'location_address', 'latitude', 'longitude')
+        }),
+        ('Submission Info', {
+            'fields': ('submitted_by', 'full_name', 'email', 'phone_number', 'submitted_at'),
+            'classes': ('collapse',), # Optionally collapse this section
+        }),
+        ('Management', {
+            'fields': ('status', 'assigned_to', 'updated_at') # Add new fields here
+        }),
+    )
+    # Make the 'status' and 'assigned_to' fields editable directly from the list view
+    list_editable = ('status', 'assigned_to')
+    # Display submitted_at and updated_at as read-only
+    readonly_fields = ('submitted_at', 'updated_at')
 
-    def lookups(self, request, model_admin):
-        """
-        Returns a list of tuples. The first element in each tuple is the coded value
-        for the option that will appear in the URL query. The second element is the
-        human-readable name for the option that will appear in the right sidebar.
-        """
-        return [
-            ('yes', 'Yes'),
-            ('no', 'No'),
-        ]
+    def get_fieldsets(self, request, obj=None):
+        # Dynamic fieldsets to exclude 'request_type' when not needed for Complaint
+        fieldsets = super().get_fieldsets(request, obj)
+        for fs in fieldsets:
+            if 'Request Details' in fs[0]:
+                # Remove 'request_type' if it's there (it's a form field, not model field)
+                if 'request_type' in fs[1]['fields']:
+                    fs[1]['fields'] = tuple(f for f in fs[1]['fields'] if f != 'request_type')
+        return fieldsets
 
-    def queryset(self, request, queryset):
-        """
-        Returns the filtered queryset based on the value
-        provided in the query string.
-        """
-        if self.value() == 'yes':
-            # Anonymous if submitted_by is NULL
-            # You might want to refine this based on your property's exact logic
-            # e.g., submitted_by__isnull=True AND (full_name__isnull=False OR email__isnull=False)
-            return queryset.filter(submitted_by__isnull=True)
-        if self.value() == 'no':
-            # Not anonymous if submitted_by is NOT NULL
-            return queryset.filter(submitted_by__isnull=False)
-        return queryset # Return the original queryset if no filter is applied
-
-# --- ComplaintCategory Admin (no change needed here for this issue) ---
 @admin.register(ComplaintCategory)
 class ComplaintCategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'description')
     search_fields = ('name',)
-
-# --- ComplaintUpdate Inline (no change needed here for this issue) ---
-class ComplaintUpdateInline(admin.TabularInline):
-    model = ComplaintUpdate
-    extra = 0
-    fields = (
-        'update_type', 
-        'message', 
-        'is_public', 
-        'old_status', 
-        'new_status', 
-        'old_priority', 
-        'new_priority', 
-        'old_assigned_to', 
-        'new_assigned_to', 
-        'updated_by', 
-        'created_at'
-    )
-    readonly_fields = (
-        'created_at', 
-        'updated_by',
-        'old_status', 
-        'new_status', 
-        'old_priority', 
-        'new_priority', 
-        'old_assigned_to', 
-        'new_assigned_to'
-    )
-
-# --- Complaint Admin (Updated list_filter) ---
-@admin.register(Complaint)
-class ComplaintAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 
-        'subject', 
-        'submitted_by', 
-        'category', 
-        'status', 
-        'priority', 
-        'assigned_to', 
-        'created_at'
-    )
-    
-    # IMPORTANT: Use the new custom filter here!
-    list_filter = (
-        'status', 
-        'priority', 
-        'category', 
-        'created_at', 
-        'assigned_to', 
-        AnonymousSubmissionFilter, # Use your custom filter class here
-    )
-    
-    search_fields = (
-        'subject',        
-        'description', 
-        'full_name',      
-        'email',          
-        'submitted_by__email', 
-        'submitted_by__username'
-    )
-    
-    raw_id_fields = ('submitted_by', 'assigned_to')
-    inlines = [ComplaintUpdateInline]
-    actions = ['mark_as_resolved', 'mark_as_in_progress', 'mark_as_closed']
-
-    def mark_as_resolved(self, request, queryset):
-        updated_count = queryset.update(status='resolved', resolved_at=timezone.now())
-        for complaint in queryset:
-            ComplaintUpdate.objects.create(
-                complaint=complaint,
-                updated_by=request.user,
-                message=f"Complaint marked as resolved via admin action.",
-                update_type='resolution',
-                old_status=complaint.status,
-                new_status='resolved'
-            )
-        self.message_user(request, f"{updated_count} complaints marked as resolved.")
-    mark_as_resolved.short_description = "Mark selected complaints as Resolved"
-
-    def mark_as_in_progress(self, request, queryset):
-        updated_count = queryset.update(status='in_progress')
-        for complaint in queryset:
-            ComplaintUpdate.objects.create(
-                complaint=complaint,
-                updated_by=request.user,
-                message=f"Complaint marked as in progress via admin action.",
-                update_type='status_change',
-                old_status=complaint.status,
-                new_status='in_progress'
-            )
-        self.message_user(request, f"{updated_count} complaints marked as In Progress.")
-    mark_as_in_progress.short_description = "Mark selected complaints as In Progress"
-
-    def mark_as_closed(self, request, queryset):
-        updated_count = queryset.update(status='closed')
-        for complaint in queryset:
-            ComplaintUpdate.objects.create(
-                complaint=complaint,
-                updated_by=request.user,
-                message=f"Complaint marked as closed via admin action.",
-                update_type='status_change',
-                old_status=complaint.status,
-                new_status='closed'
-            )
-        self.message_user(request, f"{updated_count} complaints marked as Closed.")
-    mark_as_closed.short_description = "Mark selected complaints as Closed"
-
-# --- ComplaintUpdate Admin (no change needed here for this issue) ---
-@admin.register(ComplaintUpdate)
-class ComplaintUpdateAdmin(admin.ModelAdmin):
-    list_display = (
-        'complaint', 
-        'update_type', 
-        'message', 
-        'is_public', 
-        'updated_by', 
-        'created_at', 
-        'old_status', 'new_status', 
-        'old_priority', 'new_priority', 
-        'old_assigned_to', 'new_assigned_to'
-    )
-    
-    list_filter = (
-        'is_public', 
-        'update_type', 
-        'created_at', 
-        'old_status', 
-        'new_status', 
-        'old_priority', 
-        'new_priority'
-    )
-    
-    search_fields = (
-        'complaint__subject', 
-        'message', 
-        'updated_by__email', 
-        'updated_by__username',
-        'old_status', 'new_status'
-    )
-    raw_id_fields = ('complaint', 'updated_by', 'old_assigned_to', 'new_assigned_to')
-    fieldsets = (
-        (None, {
-            'fields': ('complaint', 'updated_by', 'message', 'is_public', 'update_type')
-        }),
-        ('Change Details', {
-            'fields': (
-                ('old_status', 'new_status'),
-                ('old_priority', 'new_priority'),
-                ('old_assigned_to', 'new_assigned_to'),
-            ),
-            'description': 'These fields capture specific changes made by the update.'
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-    readonly_fields = (
-        'created_at', 
-        'updated_at', 
-        'updated_by', 
-        'old_status', 
-        'new_status', 
-        'old_priority', 
-        'new_priority', 
-        'old_assigned_to', 
-        'new_assigned_to'
-    )
