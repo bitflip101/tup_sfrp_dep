@@ -36,17 +36,20 @@ class UnifiedRequestForm(forms.Form):
     )
 
      # Fields for anonymous submissions
+    
     anonymous_full_name = forms.CharField(
         max_length=255,
         required=False, # Conditionally required in clean()
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         help_text="Your full name (if not logged in)."
     )
+    
     anonymous_email = forms.EmailField(
         required=False, # Conditionally required in clean()
         widget=forms.EmailInput(attrs={'class': 'form-control'}),
         help_text="Your email for follow-up (required if not logged in)."
     )
+    
     anonymous_phone = forms.CharField(
         max_length=20,
         required=False, # Conditionally required in clean()
@@ -78,6 +81,7 @@ class UnifiedRequestForm(forms.Form):
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         help_text="A brief summary of your request."
     )
+    
     description = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
         required=False,
@@ -92,6 +96,7 @@ class UnifiedRequestForm(forms.Form):
         empty_label="Select a complaint category",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
     complaint_priority = forms.ChoiceField(
         choices=[
             ('low', 'Low'),
@@ -124,6 +129,7 @@ class UnifiedRequestForm(forms.Form):
         empty_label="Select an inquiry category",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
     question = forms.CharField( # For inquiries, description might be "question"
         widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
         required=False,
@@ -137,6 +143,7 @@ class UnifiedRequestForm(forms.Form):
         empty_label="Select emergency type",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
     location = forms.CharField(
         max_length=255,
         required=False,

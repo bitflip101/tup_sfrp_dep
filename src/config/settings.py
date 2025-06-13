@@ -3,7 +3,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_URL = 'http://127.0.0.1:8000' # Change to actual domain in production!
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -144,6 +144,14 @@ LOGIN_REDIRECT_URL = 'home' # Use 'home' as the name of your homepage URL
 LOGOUT_REDIRECT_URL = 'login' # Redirect back to the login page
 
 # --- Allauth Specific Settings ---
+ACCOUNT_ADAPTER = 'accounts.adapters.CustomAccountAdapter' # Path to your custom adapter
+
+# This LOGIN_REDIRECT_URL will be overridden by the adapter's logic for logged-in users.
+# It primarily serves as a fallback for Django's default login if not using allauth,
+# or for some allauth edge cases where the adapter might not be called.
+# You can set it to a general user page.
+LOGIN_REDIRECT_URL = '/requests/submit/' # Or your general user post-login pages
+
 # Required for allauth to function
 SITE_ID = 1
 
@@ -193,7 +201,7 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/' # After logout, redirect to home page
 # --- Email Configuration for LOCAL DEVELOPMENT ---
 # When testing locally without an SMTP server:
 
-# - FOR DEVELOPMENT - Email Notification Simulation
+## - FOR DEVELOPMENT - Email Notification Simulation
 # Option 1: This will print emails to your console (terminal) instead of sending them.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -214,12 +222,15 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # SERVER_EMAIL = 'admin@yourinstitution.com' # For error reports etc.
 
 
-DEFAULT_FROM_EMAIL = 'noreply@sfrp.tup.edu.ph'
-SERVER_EMAIL = 'noreply@sfrp.tup.edu.ph' # Used for error emails by Django
+DEFAULT_FROM_EMAIL = 'noreply@tup.sfrp.edu.ph'
+SERVER_EMAIL = 'noreply@tup.sfrp.edu.ph' # Used for error emails by Django
+
+## Email address for receiving new request alerts for custom notifications
+ADMIN_EMAIL_FOR_NOTIFICATIONS = 'SFRP_Admi@tup.sfrp.edu.ph' # Use the same email address as in ADMINS if it's the primary alert email
 
 ## - RECEIPIENTS FOR EMAIL NOTIFICATIONS, FOR USER AND ADMIN ALERTS
 ADMINS = [
-    ('SFRP Admin', 'sfrpAdmin@sfrp.tup.edu.ph'),
+    ('SFRP Admin', 'sfrpAdmin@tup.sfrp.edu.ph'),
     # Add more admin emails as needed
 ]
 

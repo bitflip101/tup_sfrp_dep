@@ -1,0 +1,25 @@
+{# notifications/templates/notifications/request_assigned_to_staff_email.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Request Assigned To You!</title>
+</head>
+<body>
+    <p>Dear {{ assigned_staff_name }},</p>
+
+    <p>A new request has been assigned to you or an existing request's assignment has been updated:</p>
+
+    <p><strong>Request ID:</strong> #{{ request_id }}</p>
+    <p><strong>Type:</strong> {{ request_type }}</p>
+    <p><strong>Subject:</strong> {{ request_subject }}</p>
+    <p><strong>Current Status:</strong> {{ request_status }}</p>
+
+    <p>Please review the request details in the support dashboard:</p>
+    <p><a href="{{ request_url }}">{{ request_url }}</a></p>
+
+    <p>This is an automated notification. Please handle this request as soon as possible.</p>
+
+    <p>Thank you,<br>
+    The Support System</p>
+</body>
+</html>

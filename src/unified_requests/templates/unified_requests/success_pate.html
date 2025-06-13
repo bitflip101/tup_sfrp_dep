@@ -1,0 +1,38 @@
+{# unified_requests/templates/unified_requests/success_page.html #}
+{% extends 'sfrp/sfrp_base.html' %} {# Extend your project's base template #}
+
+{% block title %}Submission Successful!{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">Submission Successful!</h4>
+        <p>Thank you for submitting your request to TUP SFRP.</p>
+        <hr>
+        {% if request_obj %}
+            <p class="mb-0">Your <strong>{{ request_type_slug|title|replace:'_',' ' }}</strong> has been recorded.</p>
+            <p class="mb-0">Your Request ID is: <strong>#{{ request_obj.pk }}</strong></p>
+            <p>Subject: <strong>{{ request_obj.subject }}</strong></p>
+
+            {% if request_obj.submitted_by %}
+                <p class="small text-muted">You will receive updates to your registered email address.</p>
+            {% elif request_obj.email %}
+                <p class="small text-muted">Updates will be sent to <strong>{{ request_obj.email }}</strong>.</p>
+            {% else %}
+                <p class="small text-muted">You will receive updates if contact information was provided.</p>
+            {% endif %}
+
+        {% else %}
+            <p class="mb-0">We have received your request. We will get back to you shortly.</p>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'abode:sfrp_lp' %}" class="btn btn-primary mr-2">Go to Landing Page</a>
+        <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-secondary">Submit Another Request</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'complaints:my_complaints' %}" class="btn btn-info ml-2">View My Submissions</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

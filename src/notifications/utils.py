@@ -1,126 +1,202 @@
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.urls import reverse
 import logging
 
+# Helper function to strip HTML tags for plain text email (add to notifications/utils.py)
+from django.utils.html import strip_tags
+
+# Import your request models here
+from complaints.models import Complaint
+from services.models import ServiceRequest
+from inquiries.models import Inquiry
+from emergencies.models import EmergencyReport
+
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
-def send_complaint_notification_emails(complaint_instance):
+def send_request_status_update_email(request_obj, old_status, new_status):
     """
-    Sends email notifications to the user who submitted the complaint and to the admin.
+    Sends an email to the user when their request status is updated.
     """
-    # Define your site's domain for URL construction (adjust if using specific site config)
-    # For local development, this might be '127.0.0.1:8000'
-    # For production, it should be your actual domain (e.g., 'www.yourwebsite.com')
-    # You might get this from Django's Sites framework if you've configured it.
-    site_domain = '127.0.0.1:8000' # Make this dynamic in production settings or use Sites framework
+    # Determine the choices for the status field from the request_obj's specific model
+    # This ensures we get the correct choices even if models have slightly different status sets
+    try:
+        status_choices_map = dict(request_obj._meta.get_field('status').choices)
+    except Exception as e:
+        # Fallback in case 'status' field or choices are not found (unlikely if your models are consistent)
+        print(f"Warning: Could not retrieve status choices for {request_obj.__class__.__name__}. Error: {e}")
+        status_choices_map = {} # Provide an empty map as a safe fallback
 
-    # --- Email to User (Submitter) ---
-    user_email = None
-    user_name = "Valued User"
+    # Get the human-readable display values using the map
+    # .get(key, default) is used in case a status value isn't perfectly mapped (e.g., a typo)
+    old_status_display = status_choices_map.get(old_status, old_status) # Fallback to raw value if display not found
+    new_status_display = status_choices_map.get(new_status, new_status)
 
-    if complaint_instance.submitted_by:
-        user_email = complaint_instance.submitted_by.email
-        user_name = complaint_instance.submitted_by.get_full_name() or complaint_instance.submitted_by.username
-    elif complaint_instance.email: # For anonymous complaints
-        user_email = complaint_instance.email
-        user_name = complaint_instance.full_name or "Anonymous User"
+    user_name = request_obj.submitted_by.get_full_name() if request_obj.submitted_by else (request_obj.full_name or 'Valued User')
+    recipient_email = request_obj.submitted_by.email if request_obj.submitted_by else request_obj.email
 
-    # Ensure DEFAULT_FROM_EMAIL is set
-    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'webmaster@localhost')
-    if not from_email:
-        logger.error("DEFAULT_FROM_EMAIL is not set in settings. Emails cannot be sent.")
-        return # Exit the function if no sender email
-    
-     # Try sending email to user
-    if user_email:
+    if not recipient_email:
+        # No email to send to
+        return
+
+    request_url = settings.BASE_URL + reverse(
+        'support_dashboard:request_detail',
+        kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk}
+    )
+
+    context = {
+        'user_name': user_name,
+        'request_id': request_obj.pk,
+        'request_subject': request_obj.subject,
+        'old_status': old_status_display, # Use the correctly obtained display value
+        'new_status': new_status_display, # Use the correctly obtained display value
+        'request_url': request_url,
+    }
+
+    user_subject = f"Your Request #{request_obj.pk} Status Update: {new_status_display}"
+    user_html_content = render_to_string('notifications/request_status_update_user_email.html', context)
+    user_text_content = strip_tags(user_html_content)
+
+    user_msg = EmailMultiAlternatives(
+        user_subject,
+        user_text_content,
+        settings.DEFAULT_FROM_EMAIL,
+        [recipient_email]
+    )
+    user_msg.attach_alternative(user_html_content, "text/html")
+    user_msg.send()
+
+def send_request_assignment_email(request_obj):
+    """
+    Sends an email to the newly assigned staff member.
+    """
+    if not request_obj.assigned_to or not request_obj.assigned_to.email:
+        return # No one assigned or assigned person has no email
+
+    assigned_staff_name = request_obj.assigned_to.get_full_name() or request_obj.assigned_to.username
+    recipient_email = request_obj.assigned_to.email
+
+    request_url = settings.BASE_URL + reverse(
+        'support_dashboard:request_detail',
+        kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk} # Ensure request_type_slug is available
+    )
+
+    context = {
+        'assigned_staff_name': assigned_staff_name,
+        'request_id': request_obj.pk,
+        'request_type': request_obj.request_type_slug.replace('_', ' ').title(), # Make it readable (e.g., "Service Request")
+        'request_subject': request_obj.subject,
+        'request_status': request_obj.get_status_display(),
+        'request_url': request_url,
+    }
+
+    subject = f"New Request Assigned To You: #{request_obj.pk} - {request_obj.subject}"
+    html_content = render_to_string('notifications/request_assigned_to_staff_email.html', context)
+    text_content = strip_tags(html_content)
+
+    msg = EmailMultiAlternatives(
+        subject,
+        text_content,
+        settings.DEFAULT_FROM_EMAIL,
+        [recipient_email]
+    )
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+# NEW/REFINED FUNCTION for initial submission notifications
+def send_new_request_submission_notifications(request_obj):
+    """
+    Sends notification emails upon initial submission of any request type:
+    - To the user who submitted the request (confirmation).
+    - To an admin/support email (new request alert).
+    """
+    # Ensure request_type_slug is set on the object
+    if not hasattr(request_obj, 'request_type_slug'):
+        if isinstance(request_obj, Complaint):
+            request_obj.request_type_slug = 'complaint'
+        elif isinstance(request_obj, ServiceRequest):
+            request_obj.request_type_slug = 'service'
+        elif isinstance(request_obj, Inquiry):
+            request_obj.request_type_slug = 'inquiry'
+        elif isinstance(request_obj, EmergencyReport):
+            request_obj.request_type_slug = 'emergency'
+        else:
+            request_obj.request_type_slug = 'unknown' # Fallback for unexpected types
+
+    # --- Email to the User (Submission Confirmation) ---
+    recipient_email = request_obj.submitted_by.email if request_obj.submitted_by else request_obj.email
+    user_name = request_obj.submitted_by.get_full_name() or request_obj.submitted_by.username if request_obj.submitted_by else (request_obj.full_name or 'Valued User')
+
+    if recipient_email:
+        # Link to the user's specific request detail page (can be in unified_requests or a user dashboard)
+        # Assuming you have a user-facing detail URL like 'unified_requests:request_detail'
         try:
-            # Validate user_email format if necessary, though send_mail might catch it
-            if not user_email.strip(): # Basic check for empty string
-                logger.warning(f"User email is empty for complaint #{complaint_instance.id}. Skipping user notification.")
-            else:
-                user_subject = f"Your Complaint #{complaint_instance.id} Has Been Submitted"
-                complaint_url = f"http://{site_domain}{reverse('complaints:user_complaint_detail', args=[complaint_instance.id])}"
+            user_request_url = settings.BASE_URL + reverse(
+                'unified_requests:request_detail',
+                kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk}
+            )
+        except Exception:
+            user_request_url = settings.BASE_URL # Fallback if URL reverse fails
 
-                user_context = {
-                    'user_name': user_name,
-                    'complaint': complaint_instance,
-                    'complaint_url': complaint_url,
-                    'site_name': getattr(settings, 'PROJECT_NAME', 'Our Platform'),
-                }
-                
-                # Try rendering email template for user
-                try:
-                    html_message_user = render_to_string('notifications/complaint_submitted_user_email.html', user_context)
-                    plain_message_user = strip_tags(html_message_user)
-                except Exception as e:
-                    logger.error(f"Error rendering user email template for complaint #{complaint_instance.id}: {e}", exc_info=True)
-                    html_message_user = None # Ensure it's not used if rendering failed
-                    plain_message_user = f"Error rendering email. Your complaint ID: {complaint_instance.id}"
+        user_context = {
+            'user_name': user_name,
+            'request_id': request_obj.pk,
+            'request_type': request_obj.request_type_slug.replace('_', ' ').title(),
+            'request_subject': request_obj.subject,
+            'request_url': user_request_url,
+            'request_description': request_obj.description, # Include description
+            # Add other details relevant to the user's confirmation email
+        }
+        user_subject = f"Your Request #{request_obj.pk} Has Been Submitted Successfully"
+        # Use a generic template, you might need to rename/adapt your existing ones
+        user_html_content = render_to_string('notifications/request_submitted_user_email.html', user_context)
+        user_text_content = strip_tags(user_html_content)
 
-                if html_message_user: # Only attempt to send if template rendered successfully
-                    send_mail(
-                        user_subject,
-                        plain_message_user,
-                        from_email,
-                        [user_email],
-                        html_message=html_message_user,
-                        fail_silently=False,
-                    )
-                    logger.info(f"SIMULATED EMAIL SENT to user: {user_email} for Complaint #{complaint_instance.id}")
-                else:
-                    logger.warning(f"Skipping user email send due to rendering error for complaint #{complaint_instance.id}.")
+        user_msg = EmailMultiAlternatives(
+            user_subject,
+            user_text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [recipient_email]
+        )
+        user_msg.attach_alternative(user_html_content, "text/html")
+        user_msg.send()
 
-        except Exception as e:
-            logger.error(f"Failed to send user email for complaint #{complaint_instance.id} to {user_email}: {e}", exc_info=True)
-    else:
-        logger.info(f"No user email found for complaint #{complaint_instance.id}. Skipping user notification.")
-
-
-    # --- Email to Admin ---
-    admin_emails = [email for name, email in getattr(settings, 'ADMINS', [])]
-    if not admin_emails:
-        logger.warning("No ADMINS defined in settings.py. Skipping admin complaint notification.")
-        # Optional: set a fallback admin email for development if you don't want to define ADMINS
-        # admin_emails = ['admin@example.com'] 
-    
-    if admin_emails:
+    # --- Email to Admin/Support (New Request Alert) ---
+    # You need to define ADMIN_EMAIL_FOR_NOTIFICATIONS in your settings.py
+    admin_recipient_email = getattr(settings, 'ADMIN_EMAIL_FOR_NOTIFICATIONS', None)
+    if admin_recipient_email:
+        # Link to the admin dashboard detail view
         try:
-            admin_subject = f"New Complaint Submitted: #{complaint_instance.id} - {complaint_instance.subject}"
-            admin_complaint_url = f"http://{site_domain}/admin/complaints/complaint/{complaint_instance.id}/change/"
+            admin_dashboard_url = settings.BASE_URL + reverse(
+                'support_dashboard:request_detail',
+                kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk}
+            )
+        except Exception:
+            admin_dashboard_url = settings.BASE_URL + '/dashboard/' # Fallback if URL reverse fails
 
-            admin_context = {
-                'complaint': complaint_instance,
-                'admin_complaint_url': admin_complaint_url,
-                'site_name': getattr(settings, 'PROJECT_NAME', 'Our Platform'),
-            }
-            
-            # Try rendering email template for admin
-            try:
-                html_message_admin = render_to_string('notifications/complaint_submitted_admin_email.html', admin_context)
-                plain_message_admin = strip_tags(html_message_admin)
-            except Exception as e:
-                logger.error(f"Error rendering admin email template for complaint #{complaint_instance.id}: {e}", exc_info=True)
-                html_message_admin = None
-                plain_message_admin = f"Error rendering email. New complaint ID: {complaint_instance.id}"
+        admin_context = {
+            'request_id': request_obj.pk,
+            'request_type': request_obj.request_type_slug.replace('_', ' ').title(),
+            'request_subject': request_obj.subject,
+            'submitted_by': user_name,
+            'submitted_email': recipient_email,
+            'admin_dashboard_url': admin_dashboard_url,
+            'request_description': request_obj.description, # Include description
+            # Add other details pertinent to admin alert
+        }
+        admin_subject = f"New {request_obj.request_type_slug.replace('_', ' ').title()} Submitted: #{request_obj.pk} - {request_obj.subject}"
+        # Use a generic template, you might need to rename/adapt your existing ones
+        admin_html_content = render_to_string('notifications/request_submitted_admin_email.html', admin_context)
+        admin_text_content = strip_tags(admin_html_content)
 
-            if html_message_admin: # Only attempt to send if template rendered successfully
-                send_mail(
-                    admin_subject,
-                    plain_message_admin,
-                    from_email,
-                    admin_emails,
-                    html_message=html_message_admin,
-                    fail_silently=False,
-                )
-                logger.info(f"SIMULATED EMAIL SENT to admins: {', '.join(admin_emails)} for Complaint #{complaint_instance.id}")
-            else:
-                logger.warning(f"Skipping admin email send due to rendering error for complaint #{complaint_instance.id}.")
-
-        except Exception as e:
-            logger.error(f"Failed to send admin email for complaint #{complaint_instance.id}: {e}", exc_info=True)
-    else:
-        logger.info(f"No admin emails configured. Skipping admin notification for complaint #{complaint_instance.id}.")
+        admin_msg = EmailMultiAlternatives(
+            admin_subject,
+            admin_text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [admin_recipient_email]
+        )
+        admin_msg.attach_alternative(admin_html_content, "text/html")
+        admin_msg.send()

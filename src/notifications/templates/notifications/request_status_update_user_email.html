@@ -1,0 +1,23 @@
+{# notifications/templates/notifications/request_status_update_user_email.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Request Status Has Been Updated!</title>
+</head>
+<body>
+    <p>Dear {{ user_name }},</p>
+
+    <p>This is to inform you that the status of your request **#{{ request_id }} - {{ request_subject }}** has been updated.</p>
+
+    <p><strong>Old Status:</strong> {{ old_status }}</p>
+    <p><strong>New Status:</strong> {{ new_status }}</p>
+
+    <p>You can view the details of your request here:</p>
+    <p><a href="{{ request_url }}">{{ request_url }}</a></p>
+
+    <p>If you have any questions, please do not reply to this email directly. Contact us through the official channels on our website.</p>
+
+    <p>Thank you,<br>
+    The Support Team</p>
+</body>
+</html>

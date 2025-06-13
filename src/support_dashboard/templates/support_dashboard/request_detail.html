@@ -139,7 +139,11 @@
                     <button type="submit" name="update_status" class="btn btn-sm btn-primary">Update Status</button>
                 </div>
             </div>
-            {% if status_form.status.errors %}<div class="text-danger offset-sm-2 col-sm-10">{{ status_form.status.errors }}</div>{% endif %}
+            {% if status_form.status.errors %}
+                <div class="text-danger offset-sm-2 col-sm-10">
+                    {{ status_form.status.errors }}
+                </div>
+            {% endif %}
         </form>
 
         <form method="post" class="mt-3">
