@@ -26,16 +26,6 @@ class ServiceRequest(models.Model):
     """
     Represents a request for a specific service.
     """
-    # STATUS_CHOICES = [
-    #     ('new', 'New'),
-    #     ('in_progress', 'In Progress'),
-    #     ('completed', 'Completed'),
-    #     ('closed', 'Closed'),
-    #     ('cancelled', 'Cancelled'),
-    # ]
-
-    
-
     # --- Submission Details ---
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
