@@ -57,22 +57,6 @@ class UnifiedRequestForm(forms.Form):
         help_text="Your phone number for follow-up (optional)."
     )
 
-    # def __init__(self, *args, **kwargs):
-    #     # Extract the request from kwargs, default to None
-    #     self.request = kwargs.pop('request', None)
-    #     super().__init__(*args, **kwargs)
-
-    #     # Conditionally hide/show fields or set their initial state
-    #     # In a real scenario, these fields would be hidden/shown via JS in the template
-    #     # Here we just make sure they are not required for logged-in users
-    #     if self.request and self.request.user.is_authenticated:
-    #         self.fields['anonymous_full_name'].required = False
-    #         self.fields['anonymous_email'].required = False
-    #         self.fields['anonymous_phone'].required = False
-    #     else: # For anonymous users
-    #         # self.fields['anonymous_full_name'].required = True # Decide if name is strictly required
-    #         self.fields['anonymous_email'].required = True # Email is essential for contact
-    #         self.fields['anonymous_phone'].required = False
 
     # Common fields
     subject = forms.CharField(
@@ -97,16 +81,16 @@ class UnifiedRequestForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
-    complaint_priority = forms.ChoiceField(
-        choices=[
-            ('low', 'Low'),
-            ('medium', 'Medium'),
-            ('high', 'High'),
-            ('urgent', 'Urgent'),
-        ],
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
+    # complaint_priority = forms.ChoiceField(
+    #     choices=[
+    #         ('low', 'Low'),
+    #         ('medium', 'Medium'),
+    #         ('high', 'High'),
+    #         ('urgent', 'Urgent'),
+    #     ],
+    #     required=False,
+    #     widget=forms.Select(attrs={'class': 'form-control'})
+    # )
 
     attachments = forms.FileField(
         required=False,
@@ -240,12 +224,12 @@ class UnifiedRequestForm(forms.Form):
                 self.add_error('complaint_category', "Complaint category is required.")
             if not description:
                 self.add_error('description', "Description is required for complaints.")
-            if not cleaned_data.get('complaint_priority'):
-                self.add_error('complaint_priority', "Priority is required for complaints.")
+            # if not cleaned_data.get('complaint_priority'):
+            #     self.add_error('complaint_priority', "Priority is required for complaints.")
             # Clear other fields to avoid confusion later
             cleaned_data['service_type'] = None
-            cleaned_data['priority'] = None
-            cleaned_data['due_date'] = None
+            # cleaned_data['priority'] = None
+            # cleaned_data['due_date'] = None
             cleaned_data['inquiry_category'] = None
             cleaned_data['question'] = None
             cleaned_data['emergency_type'] = None

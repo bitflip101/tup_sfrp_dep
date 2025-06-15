@@ -10,7 +10,9 @@
         <p>Thank you for submitting your request to TUP SFRP.</p>
         <hr>
         {% if request_obj %}
-            <p class="mb-0">Your <strong>{{ request_type_slug|title|replace:'_',' ' }}</strong> has been recorded.</p>
+            
+            <p class="mb-0">Your <strong>{{ request_type_slug|title}}</strong> has been recorded.</p>
+
             <p class="mb-0">Your Request ID is: <strong>#{{ request_obj.pk }}</strong></p>
             <p>Subject: <strong>{{ request_obj.subject }}</strong></p>
 

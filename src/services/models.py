@@ -124,4 +124,12 @@ class ServiceRequest(models.Model):
 
     def __str__(self):
         return f"Service Request #{self.id}: {self.subject} ({self.get_status_display()})"
+    
+    
+    
+    @property
+    def is_anonymous_submission(self):
+        # A complaint is anonymous if submitted_by is None AND contact details are provided.
+        # This prevents complaints with no info from being 'anonymous'.
+        return self.submitted_by is None and (self.full_name or self.email or self.phone_number)
 

@@ -87,10 +87,10 @@ class UnifiedRequestSubmitView(View):
                             category=form.cleaned_data['complaint_category'],
                             subject=form.cleaned_data['subject'],
                             description=form.cleaned_data['description'],
-                            priority=form.cleaned_data['complaint_priority'],
-                            location_address=form.cleaned_data.get('location_address'),
-                            latitude=form.cleaned_data.get('latitude'),
-                            longitude=form.cleaned_data.get('longitude'),
+                            # priority=form.cleaned_data['complaint_priority'],
+                            # location_address=form.cleaned_data.get('location_address'),
+                            # latitude=form.cleaned_data.get('latitude'),
+                            # longitude=form.cleaned_data.get('longitude'),
                         )
                         success_message = "Your complaint has been submitted successfully."
                         # For logged-in users, redirect to their list of complaints if it exists
@@ -104,8 +104,8 @@ class UnifiedRequestSubmitView(View):
                             service_type=form.cleaned_data['service_type'],
                             subject=form.cleaned_data['subject'],
                             description=form.cleaned_data['description'],
-                            priority=form.cleaned_data.get('priority'),
-                            due_date=form.cleaned_data.get('due_date'),
+                            # priority=form.cleaned_data.get('priority'),
+                            # due_date=form.cleaned_data.get('due_date'),
                         )
                         success_message = "Your service request has been submitted successfully."
                         # For logged-in users, redirect to their list of complaints if it exists
