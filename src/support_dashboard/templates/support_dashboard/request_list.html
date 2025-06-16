@@ -48,7 +48,7 @@
                     <h5 class="mb-0">Requests by Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusChart"></canvas>
+                    <canvas id="statusChart" style="height:50px; width:100px;"></canvas>
                 </div>
             </div>
         </div>
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'top',
+                        position: 'bottom',
                     },
                     title: {
                         display: false, // Title is in card-header

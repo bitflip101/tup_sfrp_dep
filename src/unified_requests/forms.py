@@ -92,11 +92,11 @@ class UnifiedRequestForm(forms.Form):
     #     widget=forms.Select(attrs={'class': 'form-control'})
     # )
 
-    attachments = forms.FileField(
-        required=False,
-        widget=forms.FileInput(attrs={'multiple': False, 'class': 'form-control-file'}),
-        help_text="Attach relevant files (e.g., photos, documents)."
-    )
+    # attachments = forms.FileField(
+    #     required=False,
+    #     widget=forms.FileInput(attrs={'multiple': False, 'class': 'form-control-file'}),
+    #     help_text="Attach relevant files (e.g., photos, documents)."
+    # )
 
     # Service Assistance fields
     service_type = forms.ModelChoiceField(
@@ -126,6 +126,12 @@ class UnifiedRequestForm(forms.Form):
         required=False,
         empty_label="Select emergency type",
         widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    attachments = forms.FileField(
+        required=False,
+        widget=forms.FileInput(attrs={'multiple': False, 'class': 'form-control-file'}),
+        help_text="Attach relevant files (e.g., photos, documents)."
     )
     
     location = forms.CharField(

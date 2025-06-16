@@ -118,7 +118,8 @@ class UnifiedRequestSubmitView(View):
                             full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone, # If your Inquiry model has these fields
                             category=form.cleaned_data['inquiry_category'],
                             subject=form.cleaned_data['subject'],
-                            question=form.cleaned_data['question'] # Uses the 'question' field
+                            # question=form.cleaned_data['question'] # Uses the 'question' field
+                            description=form.cleaned_data['description'],
                         )
                         success_message = "Your inquiry has been submitted successfully."
                         # For logged-in users, redirect to their list of complaints if it exists
@@ -130,8 +131,9 @@ class UnifiedRequestSubmitView(View):
                             submitted_by=submitted_by_user,
                             full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone, # If your EmergencyReport model has these fields
                             emergency_type=form.cleaned_data['emergency_type'],
+                            subject=form.cleaned_data['subject'],
+                            description=form.cleaned_data['description'],
                             location=form.cleaned_data['location'],
-                            description=form.cleaned_data['description']
                         )
                         success_message = "Your emergency report has been submitted. Immediate action will be taken."
                         # For logged-in users, redirect to their list of complaints if it exists

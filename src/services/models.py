@@ -30,6 +30,8 @@ class ServiceRequest(models.Model):
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='service_requests_submitted',
         help_text="Authenticated user who submitted the complaint (if any)."
     )
@@ -94,6 +96,13 @@ class ServiceRequest(models.Model):
         help_text="Priority level of the service request. (e.g., for staff action)."
     )
 
+    attachments = models.FileField(
+        upload_to='services_attachments/',
+        blank=True,
+        null=True,
+        help_text="Attach relevant files (e.g., photos, documents)."
+    )
+
     # --- Assignment & Resolution
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -124,7 +133,6 @@ class ServiceRequest(models.Model):
 
     def __str__(self):
         return f"Service Request #{self.id}: {self.subject} ({self.get_status_display()})"
-    
     
     
     @property

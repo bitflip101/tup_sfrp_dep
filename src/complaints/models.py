@@ -13,7 +13,7 @@ class ComplaintCategory(models.Model):
     description = models.TextField(
         blank=True,
         null=True,
-        help_text="A brief description of this category, e.g., 'Issues related to campus infrastructure.'"
+        help_text="'Issues related to campus infrastructure, staff or student behavior.'"
     )
 
     class Meta:
@@ -28,14 +28,6 @@ class Complaint(models.Model):
     """
     Represents a single complaint submitted by a user.
     """
-    # STATUS_CHOICES = [
-    #     ('new', 'New'),
-    #     ('in_progress', 'In Progress'),
-    #     ('resolved', 'Resolved'),
-    #     ('closed', 'Closed'),
-    #     ('reopened', 'Reopened'),
-    # ]
-
     # --- Submission Details ---
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -143,8 +135,6 @@ class Complaint(models.Model):
         verbose_name = "Complaint"
         verbose_name_plural = "Complaints"
         ordering = ['-submitted_at'] # Order newest first
-        # Inherits ordering from TimeStampModel.Meta which is ['-created_at']
-        # You can override if needed, e.g., ['status', '-created_at']
 
     def __str__(self):
         return f"Complaint #{self.id}: {self.subject} ({self.get_status_display()})"

@@ -2,6 +2,7 @@
 from django.db import models
 from django.conf import settings
 from abode.models import TimeStampModel
+from unified_requests.constants import STATUS_CHOICES
 
 class EmergencyType(TimeStampModel):
     """
@@ -22,16 +23,11 @@ class EmergencyReport(TimeStampModel):
     """
     Represents an emergency reported by a user.
     """
-    STATUS_CHOICES = [
-        ('new', 'New'),
-        ('in_progress', 'In Progress'),
-        ('resolved', 'Resolved'),
-        ('closed', 'Closed'),
-    ]
-
     submitted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='emergency_reports_submitted'
     )
 
@@ -46,7 +42,7 @@ class EmergencyReport(TimeStampModel):
         null=True,
         help_text="Email address of the submitter (for anonymous or guest submissions)."
     )
-    phone_number = models.CharField(
+    phone_number = models.CharField( 
         max_length=20,
         blank=True,
         null=True,
@@ -60,6 +56,13 @@ class EmergencyReport(TimeStampModel):
         blank=True,
         related_name='emergency_reports'
     )
+    subject = models.CharField(
+        max_length=255,
+        help_text="A brief summary or title of the complaint."
+    )
+    description = models.TextField(
+        help_text="Detailed description of the complaint, including all relevant information."
+    )
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -67,6 +70,13 @@ class EmergencyReport(TimeStampModel):
         blank=True,
         related_name='emergency_requests_assigned',
         help_text="Admin/Staff member assigned to this service request."
+    )
+
+    attachments = models.FileField(
+        upload_to='emergency_attachments/',
+        blank=True,
+        null=True,
+        help_text="Attach relevant files (e.g., photos, documents)."
     )
 
     location = models.CharField(max_length=255, help_text="Specific location of the emergency.")
