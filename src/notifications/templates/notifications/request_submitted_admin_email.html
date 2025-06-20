@@ -1,30 +1,51 @@
+{% load notifications_extras %}
 <!DOCTYPE html>
+
 <html>
 <head>
-    <title>New Complaint Submitted - #{{ complaint.id }}</title>
+    <title>New {{ request.request_type_slug}} Submitted - #{{ request.id }}</title>
 </head>
 <body>
     <p>Hello Admin,</p>
-    <p>A new complaint has been submitted to {{ site_name }}.</p>
-    <p><strong>Complaint ID:</strong> #{{ complaint.id }}</p>
-    <p><strong>Subject:</strong> "{{ complaint.subject }}"</p>
-    <p><strong>Category:</strong> {{ complaint.category.name|default:"N/A" }}</p>
-    <p><strong>Status:</strong> {{ complaint.get_status_display }}</p>
-    <p><strong>Priority:</strong> {{ complaint.get_priority_display }}</p>
-    <p><strong>Submitted By:</strong> 
-        {% if complaint.submitted_by %}
-            {{ complaint.submitted_by.get_full_name|default:complaint.submitted_by.username }} ({{ complaint.submitted_by.email }})
+    <p>A new **{{ request.request_type_slug }}** has been submitted to {{ site_name }}.</p>
+    <p><strong>Request ID:</strong> #{{ request.id }}</p>
+    <p><strong>Request Type:</strong> **{{ request.request_type_slug }}**</p>
+    <p><strong>Subject:</strong> "{{ request.subject }}"</p>
+
+
+    {# --- General Request Details --- #}
+    <p><strong>Status:</strong> {{ request.get_status_display }}</p>
+    <p><strong>Priority:</strong> {{ request.get_priority_display }}</p>
+    <p><strong>Submitted By:</strong>
+        {% if request.submitted_by %}
+            {{ rquest.submitted_by.get_full_name|default:request.submitted_by.username }} ({{ request.submitted_by.email }})
         {% else %}
-            Anonymous ({{ complaint.full_name|default:"N/A" }} - {{ complaint.email|default:"N/A" }})
+            Anonymous ({{ request.full_name|default:"N/A" }} - {{ request.email|default:"N/A" }})
         {% endif %}
     </p>
-    <p><strong>Submitted On:</strong> {{ complaint.created_at|date:"M d, Y H:i A" }}</p>
+    <p><strong>Submitted On:</strong> {{ request.submitted_at|date:"M d, Y H:i A" }}</p>
+
+    {# --- Type-Specific Details --- #}
+    {% if request.request_type_slug == 'complaint' %}
+        <p><strong>Category:</strong> {{ request.category.name|default:"N/A" }}</p>
+    {% elif request.request_type_slug == 'service_request' %}
+        <p><strong>Service Type:</strong> {{ request.get_service_type_display|default:"N/A" }}</p>
+        {% if request.preferred_datetime %}<p><strong>Preferred Date/Time:</strong> {{ request.preferred_datetime|date:"M d, Y H:i A" }}</p>{% endif %}
+        {% if request.location_details %}<p><strong>Location Details:</strong> {{ request.location_details }}</p>{% endif %}
+    {% elif request.request_type_slug == 'inquiry' %}
+        <p><strong>Inquiry Category:</strong> {{ request.get_inquiry_category_display|default:"N/A" }}</p>
+        <p><strong>Urgency Level:</strong> {{ request.get_urgency_level_display|default:"N/A" }}</p>
+    {% elif request.request_type_slug == 'emergency' %}
+        <p><strong>Emergency Type:</strong> {{ request.get_emergency_type_display|default:"N/A" }}</p>
+        <p><strong>Impact Level:</strong> {{ request.get_impact_level_display|default:"N/A" }}</p>
+        {% if request.contact_during_emergency %}<p><strong>Contact During Emergency:</strong> {{ request.contact_during_emergency }}</p>{% endif %}
+    {% endif %}
+
     <p><strong>Description:</strong></p>
-    <p style="white-space: pre-wrap;">{{ complaint.description }}</p>
+    <p style="white-space: pre-wrap;">{{ request.description }}</p>
     <br>
-    <p>Please review the complaint in the admin panel: <a href="{{ admin_complaint_url }}">{{ admin_complaint_url }}</a></p>
+    <p>Please review this request in the admin panel: <a href="{{ admin_request_url }}">{{ admin_request_url }}</a></p>
     <br>
     <p>Regards,</p>
     <p>The {{ site_name }} System</p>
 </body>
-</html>

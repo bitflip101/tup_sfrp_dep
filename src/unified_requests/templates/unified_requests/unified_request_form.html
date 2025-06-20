@@ -334,9 +334,9 @@
         // If the form was submitted with errors, the 'reportAnonymouslyCheckbox.checked'
         // might already be true from previous form data. Respect that.
         // If user is anonymous, default 'Report Anonymously' to checked to guide them.
-        if (!isAuthenticated && !reportAnonymouslyCheckbox.checked) {
-             reportAnonymouslyCheckbox.checked = true;
-        }
+        // if (!isAuthenticated && !reportAnonymouslyCheckbox.checked) {
+        //      reportAnonymouslyCheckbox.checked = true;
+        // }
         toggleAllFields(); // Call on load to set initial state of all fields
         updateSubmitButtonState(); // Call on load to set initial state of submit button
 

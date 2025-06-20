@@ -50,7 +50,6 @@ class CustomUserCreationForm(UserCreationForm):
         self.fields['password2'].label = ''
         # (first_name, last_name, user_type labels already handled above)
 
-
 # Custom Authentication Form for Login (no changes needed here for user_type)
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):

@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount', # Optional, if you plan to add social logins later
     'django.contrib.sites', # Required by allauth
+
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [

@@ -32,7 +32,8 @@ class UnifiedRequestForm(forms.Form):
         required = False, # A checkbox that toggle value, check=True, notChedked = False
         label = "Report Anonymously",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input','id':'id_report_anonymously'}),
-        help_text = "Check this box if you wish to link/log this request to your user account."
+        help_text = "Check this box if you wish to link/log this request to your user account.",
+        initial=False
     )
 
      # Fields for anonymous submissions

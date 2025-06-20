@@ -15,6 +15,9 @@
             {# This button now directly links to the submit form #}
             <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
             <a href="{% url 'complaints:my_complaints' %}" class="btn btn-info btn-lg mt-3 ml-3">View My Submissions</a>
+            {% if user.is_staff %}
+            <a href="{% url 'support_dashboard:request_list' %}" class="btn btn-success btn-lg mt-3 ml-3">Manage All Requests</a>
+            {% endif %}
         {% else %}
             <p class="mt-2">Ready to submit a request? Click "Submit a New Request" below or explore options.</p>
             {# This button now directly links to the submit form for anonymous users #}

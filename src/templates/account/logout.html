@@ -1,26 +1,41 @@
 {% extends 'sfrp/sfrp_base.html' %}
-    {% load allauth i18n %}
-    {% block head_title %}
-        {% trans "Sign Out" %}
-    {% endblock head_title %}
-    {% block content %}
-        {% element h1 %}
-            {% trans "Sign Out" %}
-        {% endelement %}
-        {% element p %}
-            {% trans 'Are you sure you want to sign out?' %}
-        {% endelement %}
-        {% url 'account_logout' as action_url %}
-        {% element form method="post" action=action_url no_visible_fields=True %}
-            {% slot body %}
-                {% csrf_token %}
-                {{ redirect_field }}
-            {% endslot %}
-            {% slot actions %}
-                {% element button type="submit" %}
-                    {% trans 'Sign Out' %}
-                {% endelement %}
-            {% endslot %}
-        {% endelement %}
-    {% endblock content %}
+{% load i18n %} {# Make sure i18n is loaded for translation strings #}
+
+{% block title %}
+    {% trans "Sign Out" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5"> {# Adjust column width for better centering on various screens #}
+            <div class="card shadow-sm border-0"> {# Added border-0 to remove default card border #}
+                <div class="card-body p-4"> {# Added padding #}
+                    <h2 class="card-title text-center mb-4">
+                        <i class="fas fa-sign-out-alt text-muted mr-2"></i> {% trans "Sign Out" %}
+                    </h2>
+                    <p class="card-text text-center lead mb-4">
+                        {% trans 'Are you sure you want to sign out?' %}
+                    </p>
+
+                    <form method="post" action="{% url 'account_logout' %}">
+                        {% csrf_token %}
+                        {# This field is often used by allauth for redirection logic, keep it #}
+                        {{ redirect_field }} 
+
+                        <div class="d-flex flex-column"> {# Use flexbox for button stacking #}
+                            <button class="btn btn-danger btn-lg mb-3" type="submit">
+                                <i class="fas fa-sign-out-alt mr-2"></i> {% trans 'Sign Out' %}
+                            </button>
+                            <a href="{% url 'abode:sfrp_lp' %}" class="btn btn-secondary btn-lg">
+                                {% trans 'Cancel' %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
 

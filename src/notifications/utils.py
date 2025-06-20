@@ -14,6 +14,9 @@ from services.models import ServiceRequest
 from inquiries.models import Inquiry
 from emergencies.models import EmergencyReport
 
+# You might need to import ContentType for dynamically generating admin URLs
+from django.contrib.contenttypes.models import ContentType
+
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
@@ -114,7 +117,7 @@ def send_new_request_submission_notifications(request_obj):
     - To an admin/support email (new request alert).
     """
     # Ensure request_type_slug is set on the object
-    if not hasattr(request_obj, 'request_type_slug'):
+    if not hasattr(request_obj, 'request_type_slug') or not request_obj.request_type_slug:
         if isinstance(request_obj, Complaint):
             request_obj.request_type_slug = 'complaint'
         elif isinstance(request_obj, ServiceRequest):
@@ -136,19 +139,24 @@ def send_new_request_submission_notifications(request_obj):
         try:
             user_request_url = settings.BASE_URL + reverse(
                 'unified_requests:request_detail',
-                kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk}
+                kwargs={'request_type_slug': request_obj.request_type_slug, 'pk': request_obj.pk}
             )
-        except Exception:
+        except Exception as e:
+            print(f"Error reversing user request URL: {e}") # Log the error for debugging
             user_request_url = settings.BASE_URL # Fallback if URL reverse fails
 
         user_context = {
             'user_name': user_name,
-            'request_id': request_obj.pk,
-            'request_type': request_obj.request_type_slug.replace('_', ' ').title(),
-            'request_subject': request_obj.subject,
+            'request_obj': request_obj, # Pass the full object to user template for dynamic fields
             'request_url': user_request_url,
-            'request_description': request_obj.description, # Include description
+            # 'request_id': request_obj.pk,
+            # 'request_type': request_obj.request_type_slug.replace('_', ' ').title(),
+            # 'request_subject': request_obj.subject,
+            # 'request_description': request_obj.description, # Include description
             # Add other details relevant to the user's confirmation email
+
+            # 'request_id', 'request_type', 'request_subject', 'request_description'
+            # are now accessible via request_obj in the template if you change it
         }
         user_subject = f"Your Request #{request_obj.pk} Has Been Submitted Successfully"
         # Use a generic template, you might need to rename/adapt your existing ones
@@ -170,25 +178,29 @@ def send_new_request_submission_notifications(request_obj):
     if admin_recipient_email:
         # Link to the admin dashboard detail view
         try:
-            admin_dashboard_url = settings.BASE_URL + reverse(
-                'support_dashboard:request_detail',
-                kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk}
-            )
-        except Exception:
-            admin_dashboard_url = settings.BASE_URL + '/dashboard/' # Fallback if URL reverse fails
+            # Get the ContentType for the specific model instance
+            content_type = ContentType.objects.get_for_model(request_obj.__class__)
+            # Construct the admin change URL name (e.g., 'admin:support_dashboard_complaint_change')
+            # Assuming your admin uses app_label_model_name format
+            admin_url_name = f'admin:{content_type.app_label}_{content_type.model.lower()}_change'
+            admin_base_url = reverse(admin_url_name, args=[request_obj.pk])
+            # Prepend settings.BASE_URL for a full, absolute URL in the email
+            admin_request_url = settings.BASE_URL + admin_base_url
+        except Exception as e:
+            print(f"Error reversing admin request URL: {e}") # Log the error for debugging
+            admin_request_url = settings.BASE_URL + '/admin/' # Fallback if URL reverse fails
 
         admin_context = {
-            'request_id': request_obj.pk,
-            'request_type': request_obj.request_type_slug.replace('_', ' ').title(),
-            'request_subject': request_obj.subject,
-            'submitted_by': user_name,
-            'submitted_email': recipient_email,
-            'admin_dashboard_url': admin_dashboard_url,
-            'request_description': request_obj.description, # Include description
-            # Add other details pertinent to admin alert
+            'request': request_obj,  # <--- Pass the FULL request_obj here!
+            'site_name': getattr(settings, 'SITE_NAME', 'Your Support System'), # Use setting if available
+            'admin_request_url': admin_request_url,
+            # 'request_id', 'request_type', 'request_subject', etc. will now be
+            # accessed directly via 'request.id', 'request.request_type_slug', 'request.subject'
+            # in the template, which aligns with the template structure I gave you.
         }
         admin_subject = f"New {request_obj.request_type_slug.replace('_', ' ').title()} Submitted: #{request_obj.pk} - {request_obj.subject}"
-        # Use a generic template, you might need to rename/adapt your existing ones
+
+        # Ensure this template path is correct for the admin email
         admin_html_content = render_to_string('notifications/request_submitted_admin_email.html', admin_context)
         admin_text_content = strip_tags(admin_html_content)
 

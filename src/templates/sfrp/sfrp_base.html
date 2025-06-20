@@ -26,12 +26,18 @@
                         <a class="nav-link" href="{% url 'abode:sfrp_lp' %}">Home</a>
                     </li>
                     {% if user.is_authenticated %}
+                        {% if user.is_staff %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'support_dashboard:request_list' %}">Support Dashboard</a>
+                            </li>
+                        {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'unified_requests:submit_request' %}">Submit Request</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'complaints:my_complaints' %}">My Complaints</a> {# You'll add similar links for other services later #}
+                            <a class="nav-link" href="{% url 'complaints:my_complaints' %}">My Request</a> {# You'll add similar links for other services later #}
                         </li>
+                        {% endif %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 {{ user.username }}

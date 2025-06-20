@@ -7,7 +7,7 @@
 <body>
     <p>Dear {{ user_name }},</p>
 
-    <p>This is to inform you that the status of your request **#{{ request_id }} - {{ request_subject }}** has been updated.</p>
+    <p>This is to inform you that the status of your {{ request_type }} **#{{ request_id }} - {{ request_subject }}** has been updated.</p>
 
     <p><strong>Old Status:</strong> {{ old_status }}</p>
     <p><strong>New Status:</strong> {{ new_status }}</p>
