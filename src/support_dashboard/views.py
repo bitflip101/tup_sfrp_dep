@@ -17,7 +17,7 @@ from emergencies.models import EmergencyReport
 
 # Import your forms
 from .forms import RequestStatusUpdateForm, RequestAssignmentUpdateForm
-from .forms import RequestFilterForm # NEW: Import the RequestFilterForm
+from .forms import RequestFilterForm # Import the RequestFilterForm
 
 # Import notification utilities
 from notifications.utils import send_request_status_update_email, send_request_assignment_email
@@ -41,11 +41,11 @@ class SupportDashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not self.request.user.is_authenticated:
             return redirect(self.get_login_url())
         messages.error(self.request, "You do not have permission to access the support dashboard.")
-        return redirect('abode:sfrp_lp') # Redirect to a home page or another suitable page
+        return redirect('abode:sfrp_lp') # Redirect to a home page for now, then create another suitable page.
 
 # Unified Request List View with Search and Filtering
 class RequestListView(SupportDashboardMixin, View):
-    template_name = 'support_dashboard/request_list.html' # Corrected template name if it was requests_list.html
+    template_name = 'support_dashboard/request_list.html'
 
     # A map to easily get model class by its slug
     model_map = {
@@ -187,7 +187,6 @@ class RequestListView(SupportDashboardMixin, View):
 
         return stats
 
-
 # RequestDetailView (Your existing RequestDetailView, slightly adjusted for consistency)
 class RequestDetailView(SupportDashboardMixin, View):
     template_name = 'support_dashboard/request_detail.html'
@@ -271,3 +270,36 @@ class RequestDetailView(SupportDashboardMixin, View):
         # Re-render with errors if forms were invalid or invalid action
         context = self.get_context_data(request_obj, status_form=status_form, assignment_form=assignment_form)
         return render(request, self.template_name, context)
+
+class RequestTrendView(SupportDashboardMixin, View):
+    template_name = 'support_dashboard/request_trend.html'
+
+    model_map = {
+        'complaint': Complaint,
+        'service': ServiceRequest,
+        'inquiry': Inquiry,
+        'emergency': EmergencyReport,
+    }
+
+    def get(self, request, *args, **kwargs):
+        # 1. Instantiate the filter form with GET parameters
+        filter_form = RequestFilterForm(request.GET)
+        
+        # 2. Get the filtered and sorted requests
+        # all_requests = self.get_filtered_requests(filter_form)
+        
+        # Sort requests by creation date, newest first (common dashboard requirement)
+        # all_requests = sorted(all_requests, key=lambda x: x.submitted_at, reverse=True)
+
+        # Fetch Dashboad Statistics
+        # dashboard_stats = self.get_dashboard_statistics()
+
+        # context = {
+        #     'requests': all_requests,
+        #     'filter_form': filter_form, # Pass the filter form to the template
+        #     'dashboard_stats': dashboard_stats # Pass statistics to the template
+        # }
+
+        return render(request, self.template_name, {})
+
+

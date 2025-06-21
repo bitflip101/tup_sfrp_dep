@@ -10,29 +10,30 @@
     <h2 class="mb-4">Support Dashboard Overview</h2>
 
     {# --- Dashboard Statistics Section --- #}
-    <div class="row mb-4">
+    {# Row for the three stat cards #}
+    <div class="row mb-4 d-flex"> {# 'd-flex' makes columns in this row equal height for h-100 cards #}
         {# Total Requests Card #}
-        <div class="col-md-4 mb-3">
+        <div class="col-12 col-md-4 mb-3"> {# Full width on extra small/small, 3 cards per row on medium and up #}
             <div class="card text-white bg-primary shadow-sm h-100">
-                <div class="card-body">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center"> {# Center content vertically and horizontally #}
                     <h5 class="card-title text-center">Total Requests</h5>
                     <p class="card-text display-4 text-center">{{ dashboard_stats.total_requests }}</p>
                 </div>
             </div>
         </div>
         {# New Today Card #}
-        <div class="col-md-4 mb-3">
+        <div class="col-12 col-md-4 mb-3"> {# Full width on extra small/small, 3 cards per row on medium and up #}
             <div class="card text-white bg-info shadow-sm h-100">
-                <div class="card-body">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
                     <h5 class="card-title text-center">New Today</h5>
                     <p class="card-text display-4 text-center">{{ dashboard_stats.new_today }}</p>
                 </div>
             </div>
         </div>
         {# Resolved Today Card #}
-        <div class="col-md-4 mb-3">
+        <div class="col-12 col-md-4 mb-3"> {# Full width on extra small/small, 3 cards per row on medium and up #}
             <div class="card text-white bg-success shadow-sm h-100">
-                <div class="card-body">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
                     <h5 class="card-title text-center">Resolved Today</h5>
                     <p class="card-text display-4 text-center">{{ dashboard_stats.resolved_today }}</p>
                 </div>
@@ -40,26 +41,40 @@
         </div>
     </div>
 
-    <div class="row mb-4">
-        {# Requests by Status Chart (Pie Chart) #}
-        <div class="col-md-6 mb-3">
+    {# New row for the two chart cards #}
+    <div class="row mb-4 d-flex"> {# 'd-flex' for equal height chart cards #}
+        {# Requests by Status Chart Card #}
+        <div class="col-12 col-md-4 mb-3"> {# Full width on extra small/small, 2 charts per row on medium and up #}
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Requests by Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusChart" style="height:50px; width:100px;"></canvas>
+                    {# IMPORTANT: Remove fixed width/height from canvas. Chart.js (or your charting library) #}
+                    {# should be configured to handle responsiveness. #}
+                    <canvas id="statusChart"></canvas>
                 </div>
             </div>
         </div>
-        {# Requests by Type Chart (Bar Chart) #}
-        <div class="col-md-6 mb-3">
+        {# Requests by Type Chart Card #}
+        <div class="col-12 col-md-4 mb-3"> {# Full width on extra small/small, 2 charts per row on medium and up #}
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Requests by Type</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        {# Requests by Trends - a Line graph #}
+        <div class="col-12 col-md-4 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Requests by Type</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'support_dashboard:request-trend' %}">Request Trend Page</a>
                 </div>
             </div>
         </div>
@@ -194,16 +209,17 @@
 
 {% block extra_js %}
 {# Include Chart.js Library from your static files #}
-<script src="{% static 'support_dashboard/js/chart.umd.min.js' %}"></script>
-
+<!-- <script src="{% static 'support_dashboard/js/chart.umd.min.js' %}"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
 
 {{ dashboard_stats|json_script:"dashboard-stats" }}
 
-<script>
+<script>        
 document.addEventListener('DOMContentLoaded', function() {
     // Retrieve dashboard statistics from Django context
-    // This line now correctly fetches the content of the hidden script tag.
+    // This line fetches the content of the hidden script tag.
     const dashboardStats = JSON.parse(document.getElementById('dashboard-stats').textContent);
+    console.log(dashboardStats);
 
     // Helper to get Chart.js ready data
     function getChartData(countsDict, labelsMap) {
@@ -267,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'bottom',
+                        position: 'right',
                     },
                     title: {
                         display: false, // Title is in card-header
@@ -329,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
 });
 </script>
 {% endblock %}

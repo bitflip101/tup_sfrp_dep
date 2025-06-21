@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Trends Line Chart</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- Luxon for date manipulation - LOADED FIRST -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <!-- Chart.js Adapter Luxon for time scales - LOADED AFTER LUXON -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0/dist/chartjs-adapter-luxon.min.js"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f8f9fa; /* Light background for Bootstrap */
+        }
+        /* Custom styles to match Bootstrap's primary button look for active state */
+        .btn-primary.active {
+            background-color: #0d6efd; /* Bootstrap's primary blue */
+            border-color: #0d6efd;
+        }
+        /* Override default Bootstrap button focus outline for consistency with previous behavior */
+        .btn:focus {
+            box-shadow: 0 0 0 .25rem rgba(13,110,253,.25); /* Bootstrap primary focus ring */
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="row">
+        <a href="{% url 'support_dashboard:request_list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+    <div class="card shadow-lg p-4 w-100" style="max-width: 900px;">
+        <div class="card-body">
+            <h2 class="card-title text-center text-dark mb-4">Request Trend Analysis (WIP Using Mock Data)</h2>
+
+            <div class="d-flex justify-content-center mb-4">
+                <button id="weeklyBtn" class="btn btn-primary me-2">Weekly</button>
+                <button id="monthlyBtn" class="btn btn-secondary me-2">Monthly</button>
+                <button id="yearlyBtn" class="btn btn-secondary">Yearly</button>
+            </div>
+
+            <div class="position-relative" style="height: 400px;">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DateTime = luxon.DateTime;
+
+        // Mock historical data (replace with your actual backend data)
+        function generateMockHistoricalData(numDays = 180) {
+            const data = [];
+            const types = ['complaint', 'service', 'inquiry', 'emergency'];
+            let currentDate = DateTime.now().minus({ days: numDays });
+
+            for (let i = 0; i < numDays; i++) {
+                const dayData = {
+                    date: currentDate.toISODate(), // YYYY-MM-DD
+                    complaint: Math.floor(Math.random() * 10) + 1, // 1-10 complaints
+                    service: Math.floor(Math.random() * 15) + 3, // 3-17 services
+                    inquiry: Math.floor(Math.random() * 8) + 2,   // 2-9 inquiries
+                    emergency: Math.floor(Math.random() * 4) + 1   // 1-4 emergencies
+                };
+                data.push(dayData);
+                currentDate = currentDate.plus({ days: 1 });
+            }
+            return data;
+        }
+
+        const historicalData = generateMockHistoricalData();
+
+        let trendChart; // Variable to hold the Chart.js instance
+
+        const typeLabelsMap = {
+            'complaint': 'Complaint',
+            'service': 'Service Request',
+            'inquiry': 'Inquiry',
+            'emergency': 'Emergency Report',
+        };
+
+        const backgroundColors = {
+            'complaint': 'rgba(255, 99, 132, 0.8)', // Red
+            'service': 'rgba(54, 162, 235, 0.8)',  // Blue
+            'inquiry': 'rgba(255, 206, 86, 0.8)',  // Yellow
+            'emergency': 'rgba(75, 192, 192, 0.8)',// Green
+        };
+
+        const borderColors = {
+            'complaint': 'rgba(255, 99, 132, 1)',
+            'service': 'rgba(54, 162, 235, 1)',
+            'inquiry': 'rgba(255, 206, 86, 1)',
+            'emergency': 'rgba(75, 192, 192, 1)',
+        };
+
+        /**
+         * Processes raw historical data into a format suitable for Chart.js line chart.
+         * Aggregates data by the specified time unit (week, month, year).
+         * @param {Array<Object>} data - The raw historical data.
+         * @param {string} unit - The time unit ('week', 'month', 'year').
+         * @returns {Object} - An object containing labels and datasets.
+         */
+        function processTrendData(data, unit) {
+            const aggregatedData = {}; // Stores aggregated counts: { 'YYYY-MM-DD/WW/MM': { complaint: X, service: Y, ... } }
+            let displayFormat; // Declared at the beginning of the function scope
+
+            data.forEach(item => {
+                const date = DateTime.fromISO(item.date);
+                let key;
+
+                if (unit === 'week') {
+                    // Get the start of the week (Monday)
+                    const startOfWeek = date.startOf('week');
+                    key = startOfWeek.toISODate(); // Use start of week as key
+                    displayFormat = 'MMM d, yyyy'; // e.g., Jan 1, 2023
+                } else if (unit === 'month') {
+                    // Get the start of the month
+                    const startOfMonth = date.startOf('month');
+                    key = startOfMonth.toISODate(); // Use start of month as key
+                    displayFormat = 'MMM yyyy'; // e.g., Jan 2023
+                } else if (unit === 'year') {
+                    // Get the start of the year
+                    const startOfYear = date.startOf('year');
+                    key = startOfYear.toISODate(); // Use start of year as key
+                    displayFormat = 'yyyy'; // e.g., 2023
+                }
+
+                if (!aggregatedData[key]) {
+                    aggregatedData[key] = {
+                        date: date, // Store DateTime object for sorting
+                        complaint: 0,
+                        service: 0,
+                        inquiry: 0,
+                        emergency: 0
+                    };
+                }
+
+                aggregatedData[key].complaint += item.complaint || 0;
+                aggregatedData[key].service += item.service || 0;
+                aggregatedData[key].inquiry += item.inquiry || 0;
+                aggregatedData[key].emergency += item.emergency || 0;
+            });
+
+            // Convert aggregatedData object to an array and sort by date
+            const sortedAggregatedData = Object.values(aggregatedData).sort((a, b) => a.date.toMillis() - b.date.toMillis());
+
+            // Prepare Chart.js datasets
+            const datasets = Object.keys(typeLabelsMap).map(typeKey => {
+                return {
+                    label: typeLabelsMap[typeKey],
+                    data: sortedAggregatedData.map(item => ({ x: item.date.toMillis(), y: item[typeKey] })),
+                    borderColor: borderColors[typeKey],
+                    backgroundColor: backgroundColors[typeKey],
+                    tension: 0.3, // Smoothes the line
+                    fill: false, // Don't fill area under the line
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: borderColors[typeKey],
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 5
+                };
+            });
+
+            return {
+                datasets: datasets,
+                timeUnit: unit,
+                displayFormat: displayFormat
+            };
+        }
+
+        /**
+         * Renders or updates the line chart.
+         * @param {string} unit - The time unit to display ('week', 'month', 'year').
+         */
+        function renderTrendChart(unit) {
+            const chartData = processTrendData(historicalData, unit);
+            const ctx = document.getElementById('trendChart').getContext('2d');
+
+            if (trendChart) {
+                trendChart.destroy(); // Destroy existing chart instance if it exists
+            }
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: chartData.datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Allow canvas to take parent's height
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                },
+                                usePointStyle: true, // Show colored squares/circles
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `Requests Trend (${unit.charAt(0).toUpperCase() + unit.slice(1)}ly)`,
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            },
+                            color: '#333'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    // Format the date based on the unit
+                                    const dateMillis = tooltipItems[0].parsed.x;
+                                    const dateTime = DateTime.fromMillis(dateMillis);
+                                    if (unit === 'week') {
+                                        return `Week of ${dateTime.toFormat('MMM dd, yyyy')}`;
+                                    } else if (unit === 'month') {
+                                        return dateTime.toFormat('MMM yyyy');
+                                    } else if (unit === 'year') {
+                                        return dateTime.toFormat('yyyy');
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: unit,
+                                tooltipFormat: chartData.displayFormat, // Use the display format for tooltips
+                                displayFormats: {
+                                    week: 'MMM dd',
+                                    month: 'MMM yyyy',
+                                    year: 'yyyy'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                font: {
+                                    size: 16
+                                },
+                                color: '#555'
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10,
+                                source: 'auto', // Use auto-generated ticks
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                display: false // No vertical grid lines
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Requests',
+                                font: {
+                                    size: 16
+                                },
+                                color: '#555'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (Number.isInteger(value)) {
+                                        return value;
+                                    }
+                                },
+                                color: '#666',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)' // Light horizontal grid lines
+                            }
+                        }
+                    }
+                }
+            });
+            updateButtonStyles(unit);
+        }
+
+        /**
+         * Updates the styling of the time unit buttons based on the active unit.
+         * Uses Bootstrap's `btn-primary` and `btn-secondary` classes.
+         * @param {string} activeUnit - The currently active time unit ('week', 'month', 'year').
+         */
+        function updateButtonStyles(activeUnit) {
+            const buttons = {
+                'weeklyBtn': 'week',
+                'monthlyBtn': 'month',
+                'yearlyBtn': 'year'
+            };
+            for (const btnId in buttons) {
+                const button = document.getElementById(btnId);
+                if (buttons[btnId] === activeUnit) {
+                    button.classList.remove('btn-secondary');
+                    button.classList.add('btn-primary');
+                } else {
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-secondary');
+                }
+            }
+        }
+
+        // Event Listeners for buttons
+        document.getElementById('weeklyBtn').addEventListener('click', () => renderTrendChart('week'));
+        document.getElementById('monthlyBtn').addEventListener('click', () => renderTrendChart('month'));
+        document.getElementById('yearlyBtn').addEventListener('click', () => renderTrendChart('year'));
+
+        // Initial render on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTrendChart('week'); // Default to weekly view
+        });
+    </script>
+</body>
+</html>
