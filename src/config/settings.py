@@ -138,13 +138,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Custom User Model Settings ---
-AUTH_USER_MODEL = 'accounts.CustomUser' # Tells Django to use your custom user model
+# AUTH_USER_MODEL = 'accounts.CustomUser' # Tells Django to use your custom user model
 
 # URL to redirect to after successful login
-LOGIN_REDIRECT_URL = 'home' # Use 'home' as the name of your homepage URL
+# LOGIN_REDIRECT_URL = 'home' # Use 'home' as the name of your homepage URL
 
 # URL to redirect to after logout (optional)
-LOGOUT_REDIRECT_URL = 'login' # Redirect back to the login page
+# LOGOUT_REDIRECT_URL = 'login' # Redirect back to the login page
 
 # --- Allauth Specific Settings ---
 ACCOUNT_ADAPTER = 'accounts.adapters.CustomAccountAdapter' # Path to your custom adapter

@@ -1,91 +1,96 @@
 {% extends 'sfrp/sfrp_base.html' %}
+{% load static %}
 
 {% block title %}TUP SFRP{% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/sfrp_lp.css' %}">
+{% endblock extra_css %}
+
 {% block content %}
-<header class="jumbotron jumbotron-fluid text-center bg-primary text-white py-2">
-    <div class="container">
-        <h2 class="display-5">Welcome to TUP Help Line.</h2>
-        <p class="lead">Your direct access to services, support, and communication within our institution.</p>
-        <hr class="my-4 bg-white">
-        <p>Complaints, services, inquiry, or report an emergency,<span style="font-weight: 700; color: rgb(248, 223, 0);"> we are here to assist.</span></p>
+    <header class="jumbotron jumbotron-fluid text-center text-white py-2 sfrp_lp_bg">
+        <div class="container">
+            <h2 class="display-5">Welcome to TUP Help Line.</h2>
+            <p class="lead">Your direct access to services, support, and communication within our institution.</p>
+            <hr class="my-4 bg-white">
+            <p>Complaints, services, inquiry, or report an emergency,<span style="font-weight: 700; color: rgb(248, 223, 0);"> we are here to assist.</span></p>
 
-        {% if user.is_authenticated %}
-            <p class="mt-2">How are you today <strong>{{ user.get_full_name|default:user.username|capfirst }}</strong>?</p>
-            {# This button now directly links to the submit form #}
-            <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
-            <a href="{% url 'complaints:my_complaints' %}" class="btn btn-info btn-lg mt-3 ml-3">View My Submissions</a>
-            {% if user.is_staff %}
-            <a href="{% url 'support_dashboard:request_list' %}" class="btn btn-success btn-lg mt-3 ml-3">Manage All Requests</a>
+            {% if user.is_authenticated %}
+                <p class="mt-2">How are you today <strong>{{ user.get_full_name|default:user.username|capfirst }}</strong>?</p>
+                {# This button now directly links to the submit form #}
+                <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
+                <a href="{% url 'complaints:my_complaints' %}" class="btn btn-info btn-lg mt-3 ml-3">View My Submissions</a>
+                {% if user.is_staff %}
+                <a href="{% url 'support_dashboard:request_list' %}" class="btn btn-success btn-lg mt-3 ml-3">Manage All Requests</a>
+                {% endif %}
+            {% else %}
+                <p class="mt-2">Ready to submit a request? Click "Submit a New Request" below or explore options.</p>
+                {# This button now directly links to the submit form for anonymous users #}
+                <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
+                {# Provide login/register as secondary options, not a barrier #}
+                <a href="{% url 'account_login' %}" class="btn btn-info btn-lg mt-3 ml-3">Login</a>
+                <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg mt-3 ml-3">Register</a>
             {% endif %}
-        {% else %}
-            <p class="mt-2">Ready to submit a request? Click "Submit a New Request" below or explore options.</p>
-            {# This button now directly links to the submit form for anonymous users #}
-            <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
-            {# Provide login/register as secondary options, not a barrier #}
-            <a href="{% url 'account_login' %}" class="btn btn-info btn-lg mt-3 ml-3">Login</a>
-            <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg mt-3 ml-3">Register</a>
-        {% endif %}
-    </div>
-</header>
+        </div>
+    </header>
 
-<section class="container my-2">
-    <div class="row text-center">
-        <div class="col-md-3">
-            <div class="card p-1 mb-1">
-                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
-                <h5>Report a Complaint</h5>
-                <p>Have a complaint?</p>
-                {# Always link directly to the form, passing the type parameter #}
-                <a href="{% url 'unified_requests:submit_request' %}?type=complaint" class="btn btn-outline-secondary">Learn More</a>
+    <section class="container my-2">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="card p-1 mb-1">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                    <h5>Report a Complaint</h5>
+                    <p>Have a complaint?</p>
+                    {# Always link directly to the form, passing the type parameter #}
+                    <a href="{% url 'unified_requests:submit_request' %}?type=complaint" class="btn btn-outline-secondary">Learn More</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-1 mb-1">
+                    <i class="fas fa-cogs fa-2x text-info mb-2"></i>
+                    <h5>Seek Service Assistance</h5>
+                    <p>Need services?</p>
+                    {# Always link directly to the form, passing the type parameter #}
+                    <a href="{% url 'unified_requests:submit_request' %}?type=service" class="btn btn-outline-secondary">Learn More</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-1 mb-1">
+                    <i class="fas fa-question-circle fa-2x text-primary mb-2"></i>
+                    <h5>Make an Inquiry</h5>
+                    <p>Have inquiry?</p>
+                    {# Always link directly to the form, passing the type parameter #}
+                    <a href="{% url 'unified_requests:submit_request' %}?type=inquiry" class="btn btn-outline-secondary">Learn More</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-1 mb-1">
+                    <i class="fas fa-hospital-alt fa-2x text-dark mb-2"></i>
+                    <h5>Report an Emergency</h5>
+                    <p>Emergency?</p>
+                    {# Always link directly to the form, passing the type parameter #}
+                    <a href="{% url 'unified_requests:submit_request' %}?type=emergency" class="btn btn-outline-secondary">Learn More</a>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card p-1 mb-1">
-                <i class="fas fa-cogs fa-2x text-info mb-2"></i>
-                <h5>Seek Service Assistance</h5>
-                <p>Need services?</p>
-                {# Always link directly to the form, passing the type parameter #}
-                <a href="{% url 'unified_requests:submit_request' %}?type=service" class="btn btn-outline-secondary">Learn More</a>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card p-1 mb-1">
-                <i class="fas fa-question-circle fa-2x text-primary mb-2"></i>
-                <h5>Make an Inquiry</h5>
-                <p>Have inquiry?</p>
-                {# Always link directly to the form, passing the type parameter #}
-                <a href="{% url 'unified_requests:submit_request' %}?type=inquiry" class="btn btn-outline-secondary">Learn More</a>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card p-1 mb-1">
-                <i class="fas fa-hospital-alt fa-2x text-dark mb-2"></i>
-                <h5>Report an Emergency</h5>
-                <p>Emergency?</p>
-                {# Always link directly to the form, passing the type parameter #}
-                <a href="{% url 'unified_requests:submit_request' %}?type=emergency" class="btn btn-outline-secondary">Learn More</a>
-            </div>
-        </div>
-    </div>
-</section>
+    </section>
 
-<section class="container my-5 text-center">
-    <h4>Why Use Our Portal?</h4>
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <h5><i class="fas fa-check-circle text-success mr-2"></i>Efficient Tracking</h5>
-            <p>Monitor the status of your requests from submission to resolution.</p>
+    <section class="container my-5 text-center">
+        <h4>Why Use Our Portal?</h4>
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <h5><i class="fas fa-check-circle text-success mr-2"></i>Efficient Tracking</h5>
+                <p>Monitor the status of your requests from submission to resolution.</p>
+            </div>
+            <div class="col-md-4">
+                <h5><i class="fas fa-bell text-warning mr-2"></i>Timely Notifications</h5>
+                <p>Receive email updates on your request's progress and reminders.</p>
+            </div>
+            <div class="col-md-4">
+                <h5><i class="fas fa-shield-alt text-info mr-2"></i>Secure & Private</h5>
+                <p>Your data and submissions are handled with utmost security.</p>
+            </div>
         </div>
-        <div class="col-md-4">
-            <h5><i class="fas fa-bell text-warning mr-2"></i>Timely Notifications</h5>
-            <p>Receive email updates on your request's progress and reminders.</p>
-        </div>
-        <div class="col-md-4">
-            <h5><i class="fas fa-shield-alt text-info mr-2"></i>Secure & Private</h5>
-            <p>Your data and submissions are handled with utmost security.</p>
-        </div>
-    </div>
-</section>
+    </section>
 
 {% endblock %}
