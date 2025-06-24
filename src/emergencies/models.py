@@ -4,7 +4,7 @@ from django.conf import settings
 from abode.models import TimeStampModel
 from unified_requests.constants import STATUS_CHOICES
 
-class EmergencyType(TimeStampModel):
+class EmergencyType(models.Model):
     """
     Defines types of emergencies (e.g., Medical, Security, Fire).
     """
@@ -19,7 +19,7 @@ class EmergencyType(TimeStampModel):
     def __str__(self):
         return self.name
 
-class EmergencyReport(TimeStampModel):
+class EmergencyReport(models.Model):
     """
     Represents an emergency reported by a user.
     """
@@ -96,6 +96,9 @@ class EmergencyReport(TimeStampModel):
     )
     action_taken = models.TextField(blank=True, null=True)
     resolved_at = models.DateTimeField(blank=True, null=True)
+
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Emergency Report"

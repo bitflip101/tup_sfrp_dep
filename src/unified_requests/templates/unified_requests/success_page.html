@@ -33,7 +33,7 @@
         <a href="{% url 'abode:sfrp_lp' %}" class="btn btn-primary mr-2">Go to Landing Page</a>
         <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-secondary">Submit Another Request</a>
         {% if user.is_authenticated %}
-            <a href="{% url 'complaints:my_complaints' %}" class="btn btn-info ml-2">View My Submissions</a>
+            <a href="{% url 'user_dashboard:user_request_list' %}" class="btn btn-info ml-2">View My Submissions</a>
         {% endif %}
     </div>
 </div>

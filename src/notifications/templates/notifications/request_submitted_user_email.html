@@ -8,7 +8,7 @@
     <p>Thank you for submitting your request to {{ request_url }}.</p>
     <p>Your {{ request_obj.request_type_slug}} ID is <strong>#{{ request_obj.id }}</strong> with the subject: <strong>"{{ request_obj.subject }}"</strong>.</p>
     <p>We have received your report and will review it shortly. You will receive updates on its status.</p>
-    <p>You can view the details of your complaint here: <a href="{{ complaint_url }}">{{ complaint_url }}</a></p>
+    <p>You can view the details of your complaint here: <a href="{% url 'user_dashboard:user_request_list' %}">{{ request_url }}</a></p>
     <br>
     <p>Thank you,</p>
     <p>The {{ request_url }} Team</p>

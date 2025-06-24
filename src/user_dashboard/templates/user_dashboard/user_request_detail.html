@@ -1,0 +1,79 @@
+{% extends "user_dashboard/user_dashboard_base.html" %}
+
+{% load i18n %}
+
+{% load udash_filters %}
+
+{% block user_dashboard_title %}
+    {{ request_obj.request_type_slug|title|replace_chars:"_," }}
+    #{{ request_obj.pk }}
+{% endblock user_dashboard_title %}
+
+{% block main_user_dashboard_heading %}
+    {{ request_obj.request_type_slug|title|replace_chars:"_," }} #{{ request_obj.pk }}
+{% endblock main_user_dashboard_heading %}
+
+{% block user_dashboard_actions %}
+    <a href="{% url 'user_dashboard:user_request_list' %}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left mr-2"></i> {% trans "Back to All My Requests" %}
+    </a>
+{% endblock user_dashboard_actions %}
+
+{% block user_dashboard_content %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ request_obj.subject }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- <p><strong>{% trans "Submitted By:" %}</strong>
+                        {% if request_obj.submitted_by %}
+                            {{ request_obj.submitted_by.get_full_name|default:request_obj.submitted_by.username }}
+                        {% else %}
+                            Anonymous
+                            {% if request_obj.full_name %} ({{ request_obj.full_name }}){% endif %}
+                            {% if request_obj.email %} ({{ request_obj.email }}){% endif %}
+                        {% endif %}
+                    </p> -->
+                    <p><strong>{% trans "Current Status:" %}</strong> <span class="badge badge-pill badge-{% if request_obj.status == 'new' %}primary{% elif request_obj.status == 'in_progress' %}warning{% elif request_obj.status == 'resolved' %}success{% elif request_obj.status == 'closed' %}secondary{% elif request_obj.status == 'rejected' %}danger{% else %}dark{% endif %}">{{ request_obj.get_status_display }}</span></p>
+                    <p><strong>{% trans "Assigned To:" %}</strong> {{ request_obj.assigned_to.username|default:"N/A" }}</p>
+                    <p><strong>{% trans "Submitted On:" %}</strong> {{ request_obj.submitted_at|date:"M d, Y H:i" }}</p>
+                    <p><strong>{% trans "Last Updated:" %}</strong> {{ request_obj.updated_at|date:"M d, Y H:i" }}</p>
+                </div>
+                <div class="col-md-8">
+                    <p><strong>{% trans "Description:" %}</strong></p>
+                    <p>{{ request_obj.description }}</p>
+
+                    {# Type-Specific Details - Re-use the logic from Admin Email Template #}
+                    {% if request_obj.request_type_slug == 'complaint' %}
+                        <p><strong>{% trans "Category:" %}</strong> {{ request_obj.category.name|default:"N/A" }}</p>
+                    {% elif request_obj.request_type_slug == 'service_request' %}
+                        <p><strong>{% trans "Service Type:" %}</strong> {{ request_obj.get_service_type_display|default:"N/A" }}</p>
+                        {% if request_obj.preferred_datetime %}<p><strong>{% trans "Preferred Date/Time:" %}</strong> {{ request_obj.preferred_datetime|date:"M d, Y H:i A" }}</p>{% endif %}
+                        {% if request_obj.location_details %}<p><strong>{% trans "Location Details:" %}</strong> {{ request_obj.location_details }}</p>{% endif %}
+                    {% elif request_obj.request_type_slug == 'inquiry' %}
+                        <p><strong>{% trans "Inquiry Category:" %}</strong> {{ request_obj.get_inquiry_category_display|default:"N/A" }}</p>
+                        <p><strong>{% trans "Urgency Level:" %}</strong> {{ request_obj.get_urgency_level_display|default:"N/A" }}</p>
+                    {% elif request_obj.request_type_slug == 'emergency' %}
+                        <p><strong>{% trans "Emergency Type:" %}</strong> {{ request_obj.get_emergency_type_display|default:"N/A" }}</p>
+                        <p><strong>{% trans "Impact Level:" %}</strong> {{ request_obj.get_impact_level_display|default:"N/A" }}</p>
+                        {% if request_obj.contact_during_emergency %}<p><strong>{% trans "Contact During Emergency:" %}</strong> {{ request_obj.contact_during_emergency }}</p>{% endif %}
+                    {% endif %}
+
+                    {# You can add display for attachments here if applicable #}
+                    {# {% if request_obj.attachments %} #}
+                    {#    <p><strong>Attachments:</strong> <a href="{{ request_obj.attachments.url }}" target="_blank">View Attachment</a></p> #}
+                    {# {% endif %} #}
+
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-right">
+            {# Add any user-specific actions here, e.g., "Cancel Request" (requires form/view logic) #}
+            {# <button type="button" class="btn btn-outline-danger">Cancel Request</button> #}
+        </div>
+    </div>
+{% endblock user_dashboard_content %}
+
+

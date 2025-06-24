@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'notifications',
     'attachments',
     'support_dashboard',
+    'user_dashboard',
 
     # allauth apps
     'allauth',
@@ -145,6 +146,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # URL to redirect to after logout (optional)
 # LOGOUT_REDIRECT_URL = 'login' # Redirect back to the login page
+
 
 # --- Allauth Specific Settings ---
 ACCOUNT_ADAPTER = 'accounts.adapters.CustomAccountAdapter' # Path to your custom adapter

@@ -44,7 +44,7 @@
     <p><strong>Description:</strong></p>
     <p style="white-space: pre-wrap;">{{ request.description }}</p>
     <br>
-    <p>Please review this request in the admin panel: <a href="{{ support_dashboard: }}">{{ admin_request_url }}</a></p>
+    <p>Please review this request in the admin panel: <a href="{% url 'support_dashboard:request_list' %}">{{ admin_request_url }}</a></p>
     <br>
     <p>Regards,</p>
     <p>The {{ site_name }} System</p>
