@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+        .header { background-color: #dc3545; color: white; padding: 10px 20px; text-align: center; border-top-left-radius: 8px; border-top-right-radius: 8px; }
+        .content { padding: 20px; }
+        .footer { text-align: center; font-size: 0.9em; color: #777; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
+        .button { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Urgent: Overdue Request Notification!</h2>
+        </div>
+        <div class="content">
+            <p>Dear Support Team,</p>
+            <p>This is an automated notification to inform you that the following request is overdue for action:</p>
+
+            <ul>
+                <li><strong>Request Type:</strong> {{ request_data.type }}</li>
+                <li><strong>Request ID:</strong> #{{ request_data.pk }}</li>
+                <li><strong>Subject:</strong> {{ request_data.subject }}</li>
+                <li><strong>Current Status:</strong> {{ request_data.status }}</li>
+                <li><strong>Last Updated:</strong> {{ request_data.last_updated|date:"M d, Y H:i" }}</li>
+            </ul>
+
+            <p>This request has not been updated in over 48 hours and requires your immediate attention.</p>
+
+            <p style="text-align: center;">
+                <a href="{% url 'support_dashboard:request_list' %}" class="button">View Request Details</a>
+            </p>
+
+            <p>Please log in to the dashboard to review and take action on this request.</p>
+            <p><small>This is an automated email, please do not reply.</small></p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ "now"|date:"Y" }} Your Company Name. All rights reserved.</p>
+            <p><a href="{% url 'support_dashboard:request_list' %}">Go to Admin Dashboard</a></p>
+        </div>
+    </div>
+</body>
+</html>

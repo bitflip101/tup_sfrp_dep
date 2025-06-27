@@ -126,6 +126,13 @@ class ServiceRequest(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    request_type_slug = models.CharField(max_length=50, default='service_request', editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.request_type_slug:
+            self.request_type_slug = 'service_request' # Ensure this matches the key in tasks.py
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Service Request"
         verbose_name_plural = "Service Requests"

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.sites', # Required by allauth
 
     'widget_tweaks',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -230,17 +231,28 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@tup.sfrp.edu.ph'
 SERVER_EMAIL = 'noreply@tup.sfrp.edu.ph' # Used for error emails by Django
 
-## Email address for receiving new request alerts for custom notifications
-ADMIN_EMAIL_FOR_NOTIFICATIONS = 'SFRP_Admi@tup.sfrp.edu.ph' # Use the same email address as in ADMINS if it's the primary alert email
-
-## - RECEIPIENTS FOR EMAIL NOTIFICATIONS, FOR USER AND ADMIN ALERTS
-ADMINS = [
-    ('SFRP Admin', 'sfrpAdmin@tup.sfrp.edu.ph'),
-    # Add more admin emails as needed
-]
-
-PROJECT_NAME = "SFRP-TUP HelpLine"
-
+## Email address for receiving new 
 # Media files (for user-uploaded content)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+##---Celery Configuration - for Overdue Request Notification
+NOTIFICATIONS_SEND_EMAILS = False
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0' # If using Redis on default port/db
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Riyadh' # Or your project's timezone
+CELERY_ENABLE_UTC = True
+
+from datetime import timedelta
+
+CELERY_BEAT_SCHEDULE = {
+    'check-overdue-requests-every-hour': {
+        'task': 'notifications.tasks.check_overdue_requests',
+        # 'schedule': timedelta(hours=1), # Run every 1 hour
+        'schedule': timedelta(minutes=10), # For testing, run every 10 minutes
+    },
+}

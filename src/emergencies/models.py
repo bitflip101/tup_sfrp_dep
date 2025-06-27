@@ -100,6 +100,13 @@ class EmergencyReport(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    request_type_slug = models.CharField(max_length=50, default='emergency', editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.request_type_slug:
+            self.request_type_slug = 'emergency' # Ensure this matches the key in tasks.py
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Emergency Report"
         verbose_name_plural = "Emergency Reports"

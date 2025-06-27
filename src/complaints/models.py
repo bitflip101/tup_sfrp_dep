@@ -131,6 +131,14 @@ class Complaint(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    request_type_slug = models.CharField(max_length=50, default='complaint', editable=False)
+
+    def save(self, *args, **kwargs):
+        # This ensures the slug is set for new objects
+        if not self.request_type_slug:
+            self.request_type_slug = 'complaint'
+        super().save(*args, **kwargs)
+
     class Meta():
         verbose_name = "Complaint"
         verbose_name_plural = "Complaints"
@@ -151,6 +159,7 @@ class Complaint(models.Model):
     # @property
     # def submitted_at(self):
     #     return self.created_at
+
 
 class ComplaintUpdate(TimeStampModel):
     """
