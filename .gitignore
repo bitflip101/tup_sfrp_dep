@@ -76,8 +76,8 @@ local_settings.py
 *.ini
 # Migration files - **Important: Only ignore if you manage migrations in a separate process/repo, typically you want to keep them for schema evolution.**
 # However, if you truly want to ignore them (e.g., for a template project), uncomment the line below.
-# */migrations/*.py
-# */migrations/__pycache__/
+*/migrations/*.py
+*/migrations/__pycache__/
 # If you ignore migrations, ensure your deployment process can generate them.
 # Usually, you *want* to commit migration files. I'm leaving it commented
 # as per common Django best practices, but providing it as an option.
