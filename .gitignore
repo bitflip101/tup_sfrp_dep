@@ -1,0 +1,104 @@
+# Python
+############
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+/htmlcov/
+.tox/
+.coverage
+.coverage.*
+.benchmarks
+# Byte-code files
+*.py[cod]
+# C extensions
+*.so
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.txt
+*.manifest
+*.spec
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+.mypy_cache/
+.dmypy.json
+.pytest_cache/
+.ruff_cache/
+
+# Editors and OS
+################
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+ehthumbs.db
+.settings/
+
+# Django
+##########
+# Database
+*.sqlite3
+db.sqlite3
+/data/db.sqlite3 # Assuming you might put it in a 'data' folder
+# Media and static files (user-uploaded content, generated static files)
+/media/
+/static/
+# Log files
+*.log
+/logs/
+# Secret key or local settings (sensitive information)
+local_settings.py
+.env
+*.ini
+# Migration files - **Important: Only ignore if you manage migrations in a separate process/repo, typically you want to keep them for schema evolution.**
+# However, if you truly want to ignore them (e.g., for a template project), uncomment the line below.
+# */migrations/*.py
+# */migrations/__pycache__/
+# If you ignore migrations, ensure your deployment process can generate them.
+# Usually, you *want* to commit migration files. I'm leaving it commented
+# as per common Django best practices, but providing it as an option.
+
+# Celery
+#########
+# Celerybeat schedule file (if using disk-based scheduler)
+celerybeat.pid
+celerybeat-schedule
+*.pid
+# Celery worker logs
+celery_worker.log
+
+# Frontend/Node (if applicable, e.g., if you're using npm/yarn for frontend assets)
+#############################################################################
+node_modules/
+npm-debug.log
+yarn-error.log
+.webpack/
+
+# Other temporary files
+#######################
+*.bak
+*.tmp
+*.temp
