@@ -1,0 +1,86 @@
+{% extends 'sfrp/sfrp_base.html' %}
+{% load static %}
+
+{% block title %}{{ verbose_name_plural }} - Manage{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ page_title }}</h2>
+        <a href="{% url 'support_dashboard:category_create' category_type_slug=category_type_slug %}" class="btn btn-success">
+            <i class="fas fa-plus-circle mr-2"></i> Add New {{ verbose_name }}
+        </a>
+    </div>
+
+    {# Navigation for different category types #}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Select Category Type to Manage</h5>
+        </div>
+        <div class="card-body">
+            <div class="btn-group w-100" role="group" aria-label="Category Type Selection">
+                {% for slug, info in category_models.items %}
+                <a href="{% url 'support_dashboard:category_list' category_type_slug=slug %}" 
+                   class="btn btn-outline-primary {% if slug == category_type_slug %}active{% endif %}">
+                    {{ info.plural }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Display Django Messages #}
+    {% if messages %}
+        <div class="messages mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            {% if object_list %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obj in object_list %}
+                        <tr>
+                            <td>{{ obj.pk }}</td>
+                            <td>{{ obj.name }}</td>
+                            <td>{{ obj.description|default:"-"|truncatechars:100 }}</td>
+                            <td>
+                                <a href="{% url 'support_dashboard:category_update' category_type_slug=category_type_slug category_pk=obj.pk %}" class="btn btn-sm btn-warning mr-2">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'support_dashboard:category_delete' category_type_slug=category_type_slug category_pk=obj.pk %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-center text-muted">
+                <p>No {{ verbose_name_plural }} found for this type. Start by adding one!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

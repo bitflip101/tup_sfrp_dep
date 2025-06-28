@@ -1,0 +1,21 @@
+{% load account %}
+{% user_display user as user_alias %}
+{% load i18n %}
+{% blocktrans %}
+Hello {{ user_alias|default:'there' }},
+
+Thank you for signing up for SFRP-TUP!
+
+To complete your registration and activate your account, please click the link below to verify your email address:
+
+{{ activate_url }}
+
+If the link above does not work, please copy and paste it into your web browser.
+
+If you did not sign up for SFRP-TUP Portal, please disregard this email.
+
+We look forward to having you!
+
+Best regards,
+SFRP - TUP Support Team
+{% endblocktrans %}

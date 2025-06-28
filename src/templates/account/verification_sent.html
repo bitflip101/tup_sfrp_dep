@@ -1,0 +1,40 @@
+{% extends 'sfrp/sfrp_base.html' %}
+{% load i18n %} {# Load i18n for translations #}
+
+{% block title %}{% trans "Verify Your Email Address" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6"> {# Slightly wider column for more text #}
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h2 class="card-title text-center mb-4">
+                        <i class="fas fa-paper-plane text-info mr-2"></i> {% trans "Verification Email Sent!" %}
+                    </h2>
+
+                    <div class="alert alert-success text-center mb-4" role="alert">
+                        <p class="mb-0">{% trans "We have sent an email to you for verification." %}</p>
+                    </div>
+
+                    <p class="text-center text-muted mb-3">
+                        {% trans "Please check your inbox and follow the link provided to finalize the signup process." %}
+                    </p>
+                    <p class="text-center text-muted small mb-4">
+                        {% trans "If you do not see the verification email in your main inbox, please check your spam or junk folder." %}
+                    </p>
+
+                    <p class="text-center">
+                        {% trans "Still haven't received it?" %}
+                        <a href="{% url 'account_email' %}" class="btn btn-link p-0 align-baseline">{% trans "Try resending the email" %}</a>.
+                    </p>
+
+                    <p class="text-center mt-4 mb-0 small">
+                        {% trans "If you continue to experience issues, please contact support." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

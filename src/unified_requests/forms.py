@@ -37,7 +37,6 @@ class UnifiedRequestForm(forms.Form):
     )
 
      # Fields for anonymous submissions
-    
     anonymous_full_name = forms.CharField(
         max_length=255,
         required=False, # Conditionally required in clean()
@@ -142,7 +141,7 @@ class UnifiedRequestForm(forms.Form):
         help_text="Specific location of the emergency (e.g., Building A, Room 101)."
     )
 
-    # NEW: Checkbox for Privacy Policy Agreement
+    # --- Checkbox for Privacy Policy Agreement
     privacy_policy_agreement = forms.BooleanField(
         required=True, # This field MUST be checked
         label="I agree to the Privacy Policy",
@@ -185,11 +184,11 @@ class UnifiedRequestForm(forms.Form):
         anonymous_email = cleaned_data.get('anonymous_email')
         anonymous_phone = cleaned_data.get('anonymous_phone')
 
-        # --- NEW: Privacy Policy Agreement Validation ---
+        # --- Privacy Policy Agreement Validation ---
         if not privacy_policy_agreement:
             self.add_error('privacy_policy_agreement', "You must agree to the Privacy Policy to proceed.")
 
-        # --- NEW: Anonymous Submission Logic ---
+        # --- Anonymous Submission Logic ---
         if self.request and not self.request.user.is_authenticated:
             # User is NOT authenticated (is anonymous)
             if not report_anonymously:
@@ -249,8 +248,8 @@ class UnifiedRequestForm(forms.Form):
                 self.add_error('description', "Description is required for service requests.")
             # Clear other fields
             cleaned_data['complaint_category'] = None
-            cleaned_data['complaint_priority'] = None
-            cleaned_data['location_address'] = None
+            # cleaned_data['complaint_priority'] = None
+            # cleaned_data['location_address'] = None
             cleaned_data['latitude'] = None
             cleaned_data['longitude'] = None
             cleaned_data['attachments'] = None
@@ -266,10 +265,10 @@ class UnifiedRequestForm(forms.Form):
                 self.add_error('question', "Your question is required.")
             # Clear other fields
             cleaned_data['complaint_category'] = None
-            cleaned_data['complaint_priority'] = None
-            cleaned_data['location_address'] = None
-            cleaned_data['latitude'] = None
-            cleaned_data['longitude'] = None
+            # cleaned_data['complaint_priority'] = None
+            # cleaned_data['location_address'] = None
+            # cleaned_data['latitude'] = None
+            # cleaned_data['longitude'] = None
             cleaned_data['attachments'] = None
             cleaned_data['service_type'] = None
             cleaned_data['priority'] = None

@@ -231,6 +231,17 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@tup.sfrp.edu.ph'
 SERVER_EMAIL = 'noreply@tup.sfrp.edu.ph' # Used for error emails by Django
 
+## Email address for receiving new request alerts for custom notifications
+ADMIN_EMAIL_FOR_NOTIFICATIONS = 'SFRP_Admi@tup.sfrp.edu.ph' # Use the same email address as in ADMINS if it's the primary alert email
+
+## - RECEIPIENTS FOR EMAIL NOTIFICATIONS, FOR USER AND ADMIN ALERTS
+ADMINS = [
+    ('SFRP Admin', 'sfrpAdmin@tup.sfrp.edu.ph'),
+    # Add more admin emails as needed
+]
+
+PROJECT_NAME = "SFRP-TUP HelpLine"
+
 ## Email address for receiving new 
 # Media files (for user-uploaded content)
 MEDIA_URL = '/media/'

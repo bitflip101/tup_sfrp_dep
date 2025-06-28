@@ -109,7 +109,7 @@ def send_request_assignment_email(request_obj):
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 
-# NEW/REFINED FUNCTION for initial submission notifications
+# FUNCTION for initial submission notifications
 def send_new_request_submission_notifications(request_obj):
     """
     Sends notification emails upon initial submission of any request type:

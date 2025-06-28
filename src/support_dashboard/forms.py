@@ -1,16 +1,21 @@
 # support_dashboard/forms.py
 from django import forms
 from django.contrib.auth import get_user_model
-from django.forms.widgets import DateInput # NEW: For HTML5 date input
+from django.forms.widgets import DateInput # For HTML5 date input
 
 # Import your unified STATUS_CHOICES
 from unified_requests.constants import STATUS_CHOICES
 
+# Import your category models
+from complaints.models import ComplaintCategory
+from services.models import ServiceType
+from inquiries.models import InquiryCategory
+from emergencies.models import EmergencyType
+
 # Get the currently active user model
 User = get_user_model()
 
-# NEW: Define REQUEST_TYPE_CHOICES for filtering by request type
-# These should align with the slugs used in your models (e.g., Complaint.REQUEST_TYPE_SLUG)
+# Define REQUEST_TYPE_CHOICES for filtering by request type
 REQUEST_TYPE_CHOICES = (
     ('', 'All Types'), # Option to not filter by type
     ('complaint', 'Complaint'),
@@ -36,7 +41,7 @@ class RequestAssignmentUpdateForm(forms.Form):
         empty_label="Unassigned" # Option for unassigning
     )
 
-# NEW: Form for Search and Filtering on the Request List Page
+# Form for Search and Filtering on the Request List Page
 class RequestFilterForm(forms.Form):
     # Search field for ID, Subject, Description
     q = forms.CharField(
@@ -97,3 +102,66 @@ class RequestFilterForm(forms.Form):
             elif isinstance(field.widget, forms.CheckboxInput):
                 # Ensure checkbox input has its appropriate class
                 field.widget.attrs.update({'class': 'form-check-input'})
+
+
+# --- NEW: ModelForms for Category Management ---
+
+class ComplaintCategoryForm(forms.ModelForm):
+    class Meta:
+        model = ComplaintCategory
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        labels = {
+            'name': 'Category Name',
+            'description': 'Category Description',
+        }
+
+class ServiceTypeForm(forms.ModelForm):
+    class Meta:
+        model = ServiceType
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        labels = {
+            'name': 'Service Type Name',
+            'description': 'Service Type Description',
+        }
+
+class InquiryCategoryForm(forms.ModelForm):
+    class Meta:
+        model = InquiryCategory
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        labels = {
+            'name': 'Category Name',
+            'description': 'Category Description',
+        }
+
+class EmergencyTypeForm(forms.ModelForm):
+    class Meta:
+        model = EmergencyType
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        labels = {
+            'name': 'Emergency Type Name',
+            'description': 'Emergency Type Description',
+        }
+
+# Dictionary to easily map slugs to ModelForms
+CATEGORY_FORMS = {
+    'complaint': ComplaintCategoryForm,
+    'service': ServiceTypeForm,
+    'inquiry': InquiryCategoryForm,
+    'emergency': EmergencyTypeForm,
+}

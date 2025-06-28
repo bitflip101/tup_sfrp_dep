@@ -7,7 +7,13 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <h2 class="mb-4">Support Dashboard Overview</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Support Dashboard Overview</h2>
+        {# NEW: Add a link to category management. Start with Complaint Categories as default. #}
+        <a href="{% url 'support_dashboard:category_list' category_type_slug='complaint' %}" class="btn btn-outline-dark">
+            <i class="fas fa-cogs mr-2"></i> Manage Categories
+        </a>
+    </div>
 
     {# --- Dashboard Statistics Section --- #}
     {# Row for the three stat cards #}
