@@ -1,7 +1,8 @@
 # support_dashboard/forms.py
 from django import forms
-from django.contrib.auth import get_user_model
-from django.forms.widgets import DateInput # For HTML5 date input
+from django.contrib.auth import get_user_model # To get the User model dynamically
+from django.forms.widgets import DateInput
+from django.contrib.auth.models import Group # Import Group model
 
 # Import your unified STATUS_CHOICES
 from unified_requests.constants import STATUS_CHOICES
@@ -17,74 +18,60 @@ User = get_user_model()
 
 # Define REQUEST_TYPE_CHOICES for filtering by request type
 REQUEST_TYPE_CHOICES = (
-    ('', 'All Types'), # Option to not filter by type
+    ('', 'All Types'),
     ('complaint', 'Complaint'),
     ('service', 'Service Request'),
     ('inquiry', 'Inquiry'),
     ('emergency', 'Emergency Report'),
 )
 
-# Existing Form for updating request status in detail view
+# --- Forms ---
 class RequestStatusUpdateForm(forms.Form):
     status = forms.ChoiceField(
         choices=STATUS_CHOICES,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-# Existing Form for updating request assignment in detail view
 class RequestAssignmentUpdateForm(forms.Form):
     assigned_to = forms.ModelChoiceField(
-        # IMPORTANT CHANGE: Only show staff users as assignable agents
         queryset=User.objects.filter(is_staff=True).order_by('first_name', 'last_name'),
-        required=False, # Assignment can be optional (e.g., unassign)
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        empty_label="Unassigned" # Option for unassigning
+        required=False,
+        empty_label="Unassigned",
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-# Form for Search and Filtering on the Request List Page
 class RequestFilterForm(forms.Form):
-    # Search field for ID, Subject, Description
     q = forms.CharField(
         required=False,
         label='Search',
         widget=forms.TextInput(attrs={'placeholder': 'ID, Subject, or Description'})
     )
-
-    # Filter by Status
     status = forms.ChoiceField(
-        choices=STATUS_CHOICES, # Reusing the STATUS_CHOICES from constants
+        choices=STATUS_CHOICES,
         required=False,
         label='Status'
     )
-
-    # Filter by Assigned Agent (only staff users)
     assigned_to = forms.ModelChoiceField(
         queryset=User.objects.filter(is_staff=True).order_by('first_name', 'last_name'),
         required=False,
         label='Assigned To',
-        empty_label='All Agents' # Option for no specific agent
+        empty_label='All Agents'
     )
-
-    # Filter by Submission Date Range
     submitted_after = forms.DateField(
         required=False,
         label='Submitted After',
-        widget=DateInput(attrs={'type': 'date', 'class': 'form-control'}) # Added form-control class
+        widget=DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
     submitted_before = forms.DateField(
         required=False,
         label='Submitted Before',
-        widget=DateInput(attrs={'type': 'date', 'class': 'form-control'}) # Added form-control class
+        widget=DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
-
-    # Filter by Request Type
     request_type = forms.ChoiceField(
         choices=REQUEST_TYPE_CHOICES,
         required=False,
         label='Request Type'
     )
-
-    # Checkbox to show only unassigned requests
     show_unassigned = forms.BooleanField(
         required=False,
         label='Show Unassigned Only',
@@ -92,19 +79,15 @@ class RequestFilterForm(forms.Form):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
 
-    # Add Bootstrap classes to all default widgets for consistency
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
             if not isinstance(field.widget, (forms.CheckboxInput, forms.RadioSelect, forms.ClearableFileInput)):
-                # Apply form-control class to most widgets
                 field.widget.attrs.update({'class': 'form-control'})
             elif isinstance(field.widget, forms.CheckboxInput):
-                # Ensure checkbox input has its appropriate class
                 field.widget.attrs.update({'class': 'form-check-input'})
 
-
-# --- NEW: ModelForms for Category Management ---
+# --- ModelForms for Category Management ---
 
 class ComplaintCategoryForm(forms.ModelForm):
     class Meta:
@@ -165,3 +148,144 @@ CATEGORY_FORMS = {
     'inquiry': InquiryCategoryForm,
     'emergency': EmergencyTypeForm,
 }
+
+
+# --- Forms for User Management ---
+
+class UserAdminForm(forms.ModelForm):
+    """
+    Form for managing user details (for admin/superuser).
+    Does NOT include password fields directly for security/simplicity.
+    Password changes should be handled separately or through Django Allauth's reset flow.
+    """
+    # Use CharField for password input when creating a user, then set it in view.
+    # This field is NOT part of the model directly, it's for form processing only.
+    password = forms.CharField(
+        max_length=128,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=False, # Required only on creation, not on update
+        help_text="Password will be automatically set to a default if left blank on creation. For existing users, leave blank to keep current password."
+    )
+    confirm_password = forms.CharField(
+        max_length=128,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=False,
+        help_text="Confirm password for new user. Must match."
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'is_staff', 'is_superuser', 'is_active', 'groups'
+        ]
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_superuser': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'groups': forms.SelectMultiple(attrs={'class': 'form-control'}), # For multi-select groups
+        }
+        help_texts = {
+            'username': 'Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.',
+            'email': 'Required. Used for login and notifications.',
+            'is_staff': 'Designates whether the user can log into this admin site.',
+            'is_superuser': 'Designates that this user has all permissions without explicitly assigning them.',
+            'is_active': 'Designates whether this user should be treated as active. Unselect this instead of deleting accounts.',
+            'groups': 'The groups this user belongs to. A user will get all permissions granted to each of their groups.'
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make username and email required for all operations
+        self.fields['username'].required = True
+        self.fields['email'].required = True
+
+        # If updating an existing user, password fields are not strictly required unless changed
+        if self.instance.pk:
+            self.fields['password'].required = False
+            self.fields['confirm_password'].required = False
+            self.fields['password'].help_text = "Leave blank to keep current password."
+        else:
+            # For new user creation, password is required
+            self.fields['password'].required = True
+            self.fields['confirm_password'].required = True
+            self.fields['password'].help_text = "Required for new users."
+            self.fields['confirm_password'].help_text = "Required for new users. Must match."
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        # Validate passwords only if both are provided
+        if password and confirm_password:
+            if password != confirm_password:
+                self.add_error('confirm_password', "Passwords do not match.")
+        elif (password and not confirm_password) or (not password and confirm_password):
+            self.add_error('confirm_password', "Please confirm the password.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        password = self.cleaned_data.get("password")
+
+        # Set password only if a new password was provided
+        if password:
+            user.set_password(password)
+        
+        if commit:
+            user.save()
+            # Handle groups m2m separately after user save for new users
+            if 'groups' in self.cleaned_data:
+                user.groups.set(self.cleaned_data['groups'])
+        return user
+
+
+class UserCreateForm(UserAdminForm):
+    """
+    Specific form for creating new users, ensuring password fields are required.
+    """
+    password = forms.CharField(
+        max_length=128,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=True,
+        help_text="Required. Set a password for the new user."
+    )
+    confirm_password = forms.CharField(
+        max_length=128,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=True,
+        help_text="Required. Confirm the password for the new user. Must match."
+    )
+
+    # Override __init__ to explicitly set required to True for passwords on creation
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password'].required = True
+        self.fields['confirm_password'].required = True
+        self.fields['password'].help_text = "Required. Set a password for the new user."
+        self.fields['confirm_password'].help_text = "Required. Confirm the password for the new user. Must match."
+
+
+# --- Form for Group Management ---
+class GroupForm(forms.ModelForm):
+    """
+    Form for managing Django authentication Groups.
+    """
+    class Meta:
+        model = Group
+        fields = ['name'] # Groups only have a 'name' field by default
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'name': 'Group Name',
+        }
+        help_texts = {
+            'name': 'The name of the group. Should be unique.',
+        }

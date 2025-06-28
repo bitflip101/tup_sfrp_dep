@@ -1,0 +1,17 @@
+{# support_dashboard/templates/support_dashboard/_breadcrumbs.html #}
+{# Renders a Bootstrap 4 breadcrumb navigation based on `breadcrumbs` context variable #}
+{# `breadcrumbs` should be a list of dictionaries, e.g., [{'name': 'Home', 'url': '/'}, {'name': 'Current Page'}] #}
+
+{% if breadcrumbs %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb bg-transparent px-0 py-0">
+        {% for crumb in breadcrumbs %}
+            {% if forloop.last %}
+                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+            {% else %}
+                <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.name }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}

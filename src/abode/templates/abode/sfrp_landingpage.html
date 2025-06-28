@@ -5,6 +5,61 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/sfrp_lp.css' %}">
+    {# Any additional landing page specific CSS that applies global styles could go here #}
+    <style>
+        /* Custom styles for landing page buttons to stack on small screens */
+        .lp-buttons-group .btn {
+            width: 100%; /* Full width on small screens */
+            margin-bottom: 10px; /* Space between stacked buttons */
+            /* NEW: Adjust padding for btn-lg specifically on small screens to reduce height */
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+            font-size: 1rem; /* Slightly smaller font for better fit */
+        }
+        @media (min-width: 768px) { /* Medium devices and up */
+            .lp-buttons-group .btn {
+                width: auto; /* Revert to auto width */
+                margin-bottom: 0; /* No bottom margin when horizontal */
+                margin-left: 10px; /* Space between horizontal buttons */
+                padding-top: 0.8rem; /* Restore normal btn-lg padding */
+                padding-bottom: 0.8rem;
+                font-size: 1.25rem; /* Restore normal btn-lg font size */
+            }
+            .lp-buttons-group .btn:first-child {
+                margin-left: 0; /* No left margin for the first button in the group */
+            }
+        }
+
+        /* Adjust card padding and margin for better mobile usability */
+        .info-card {
+            padding: 1.5rem !important; /* Increase padding */
+            margin-bottom: 1.5rem !important; /* Increase bottom margin */
+        }
+        .info-card i {
+            font-size: 2.5em; /* Slightly larger icons */
+        }
+
+        /* Adjust Jumbotron padding on smaller screens */
+        .jumbotron.sfrp_lp_bg {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        @media (min-width: 768px) {
+            .jumbotron.sfrp_lp_bg {
+                padding-top: 4rem;
+                padding-bottom: 4rem;
+            }
+        }
+        /* NEW: Ensure responsive font sizing for display-5 and lead text */
+        .jumbotron .display-5 {
+            /* Use clamp for more fluid and bounded font sizing */
+            font-size: clamp(2rem, 5vw, 3rem); /* Min 2rem, fluid up to 5vw, max 3rem */
+        }
+        .jumbotron .lead, .jumbotron p {
+            font-size: clamp(1rem, 3vw, 1.25rem); /* Min 1rem, fluid up to 3vw, max 1.25rem */
+            line-height: 1.5; /* Ensure good line spacing to prevent overlap */
+        }
+    </style>
 {% endblock extra_css %}
 
 {% block content %}
@@ -15,60 +70,56 @@
             <hr class="my-4 bg-white">
             <p>Complaints, services, inquiry, or report an emergency,<span style="font-weight: 700; color: rgb(248, 223, 0);"> we are here to assist.</span></p>
 
-            {% if user.is_authenticated %}
-                <p class="mt-2">How are you today <strong>{{ user.get_full_name|default:user.username|capfirst }}</strong>?</p>
-                {# This button now directly links to the submit form #}
-                <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
-                <a href="{% url 'user_dashboard:user_request_list' %}" class="btn btn-info btn-lg mt-3 ml-3">View My Submissions</a>
-                {% if user.is_staff %}
-                <a href="{% url 'support_dashboard:request_list' %}" class="btn btn-success btn-lg mt-3 ml-3">Manage All Requests</a>
+            {# NEW: Use a div to wrap buttons for responsive stacking #}
+            <div class="lp-buttons-group d-flex flex-column flex-md-row justify-content-center align-items-center mt-3">
+                {% if user.is_authenticated %}
+                    <p class="mb-2 mb-md-0 mr-md-3">How are you today <strong>{{ user.get_full_name|default:user.username|capfirst }}</strong>?</p>
+                    <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg">Submit a New Request</a>
+                    <a href="{% url 'user_dashboard:user_request_list' %}" class="btn btn-info btn-lg">View My Submissions</a>
+                    {% if user.is_staff %}
+                    <a href="{% url 'support_dashboard:request_list' %}" class="btn btn-success btn-lg">Manage All Requests</a>
+                    {% endif %}
+                {% else %}
+                    <p class="mb-2 mb-md-0 mr-md-3">Ready to submit a request? Click "Submit a New Request" below or explore options.</p>
+                    <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg">Submit a New Request</a>
+                    <a href="{% url 'account_login' %}" class="btn btn-info btn-lg">Login</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg">Register</a>
                 {% endif %}
-            {% else %}
-                <p class="mt-2">Ready to submit a request? Click "Submit a New Request" below or explore options.</p>
-                {# This button now directly links to the submit form for anonymous users #}
-                <a href="{% url 'unified_requests:submit_request' %}" class="btn btn-warning btn-lg mt-3">Submit a New Request</a>
-                {# Provide login/register as secondary options, not a barrier #}
-                <a href="{% url 'account_login' %}" class="btn btn-info btn-lg mt-3 ml-3">Login</a>
-                <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg mt-3 ml-3">Register</a>
-            {% endif %}
+            </div>
         </div>
     </header>
 
     <section class="container my-2">
         <div class="row text-center">
-            <div class="col-md-3">
-                <div class="card p-1 mb-1">
+            <div class="col-sm-6 col-md-3 mb-4"> {# Adjusted col for better stacking on small-medium screens #}
+                <div class="card p-1 info-card"> {# Added info-card class #}
                     <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
-                    <h5>Report a Complaint</h5>
+                    <!-- <h5>Report a Complaint</h5> -->
                     <p>Have a complaint?</p>
-                    {# Always link directly to the form, passing the type parameter #}
                     <a href="{% url 'unified_requests:submit_request' %}?type=complaint" class="btn btn-outline-secondary">Learn More</a>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card p-1 mb-1">
+            <div class="col-sm-6 col-md-3 mb-4">
+                <div class="card p-1 info-card">
                     <i class="fas fa-cogs fa-2x text-info mb-2"></i>
-                    <h5>Seek Service Assistance</h5>
+                    <!-- <h5>Seek Service Assistance</h5> -->
                     <p>Need services?</p>
-                    {# Always link directly to the form, passing the type parameter #}
                     <a href="{% url 'unified_requests:submit_request' %}?type=service" class="btn btn-outline-secondary">Learn More</a>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card p-1 mb-1">
+            <div class="col-sm-6 col-md-3 mb-4">
+                <div class="card p-1 info-card">
                     <i class="fas fa-question-circle fa-2x text-primary mb-2"></i>
-                    <h5>Make an Inquiry</h5>
+                    <!-- <h5>Make an Inquiry</h5> -->
                     <p>Have inquiry?</p>
-                    {# Always link directly to the form, passing the type parameter #}
                     <a href="{% url 'unified_requests:submit_request' %}?type=inquiry" class="btn btn-outline-secondary">Learn More</a>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card p-1 mb-1">
+            <div class="col-sm-6 col-md-3 mb-4">
+                <div class="card p-1 info-card">
                     <i class="fas fa-hospital-alt fa-2x text-dark mb-2"></i>
-                    <h5>Report an Emergency</h5>
+                    <!-- <h5>Emergency</h5> -->
                     <p>Emergency?</p>
-                    {# Always link directly to the form, passing the type parameter #}
                     <a href="{% url 'unified_requests:submit_request' %}?type=emergency" class="btn btn-outline-secondary">Learn More</a>
                 </div>
             </div>
@@ -78,15 +129,15 @@
     <section class="container my-5 text-center">
         <h4>Why Use Our Portal?</h4>
         <div class="row mt-4">
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3"> {# Added mb-3 for vertical spacing on mobile #}
                 <h5><i class="fas fa-check-circle text-success mr-2"></i>Efficient Tracking</h5>
                 <p>Monitor the status of your requests from submission to resolution.</p>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3">
                 <h5><i class="fas fa-bell text-warning mr-2"></i>Timely Notifications</h5>
                 <p>Receive email updates on your request's progress and reminders.</p>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3">
                 <h5><i class="fas fa-shield-alt text-info mr-2"></i>Secure & Private</h5>
                 <p>Your data and submissions are handled with utmost security.</p>
             </div>

@@ -12,15 +12,24 @@ import datetime
 # Import Django's generic views
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
-# Import your models from their respective apps
+# Import the User model
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group # Import Group model
+User = get_user_model()
+
+# Import models from their respective apps
 from complaints.models import Complaint, ComplaintCategory
 from services.models import ServiceRequest, ServiceType
 from inquiries.models import Inquiry, InquiryCategory
 from emergencies.models import EmergencyReport, EmergencyType
 
-# Import your forms (including the new ModelForms and CATEGORY_FORMS map)
-from .forms import RequestStatusUpdateForm, RequestAssignmentUpdateForm, RequestFilterForm
-from .forms import ComplaintCategoryForm, ServiceTypeForm, InquiryCategoryForm, EmergencyTypeForm, CATEGORY_FORMS
+# Import forms (including the new ModelForms, CATEGORY_FORMS map, and User/Group Forms)
+from .forms import (
+    RequestStatusUpdateForm, RequestAssignmentUpdateForm, RequestFilterForm,
+    ComplaintCategoryForm, ServiceTypeForm, InquiryCategoryForm, EmergencyTypeForm, CATEGORY_FORMS,
+    UserAdminForm, UserCreateForm, # User forms
+    GroupForm # Group management form
+)
 
 # Import notification utilities
 from notifications.utils import send_request_status_update_email, send_request_assignment_email
@@ -28,24 +37,63 @@ from notifications.utils import send_request_status_update_email, send_request_a
 # Import STATUS_CHOICES from constants
 from unified_requests.constants import STATUS_CHOICES
 
-# --- Existing Mixin for Staff Access ---
+# --- Mixin for Staff Access & Breadcrumbs ---
 class SupportDashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
-    Mixin to ensure only logged-in staff members can access the dashboard.
+    Mixin to ensure only logged-in staff members can access the dashboard
+    and to provide base breadcrumbs.
     """
     login_url = '/accounts/login/'
     raise_exception = False
 
     def test_func(self):
-        return self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)
+        # Allow any authenticated staff member (including superusers)
+        # return self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser)
+        return self.request.user.is_authenticated and self.request.user.is_staff
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(self.get_login_url())
         messages.error(self.request, "You do not have permission to access the support dashboard.")
+        # Redirect to the main dashboard if staff, otherwise home
+        if self.request.user.is_staff:
+            return redirect('support_dashboard:request_list')
         return redirect('abode:sfrp_lp')
+    
+    def get_context_data(self, **kwargs):
+        # Initialize context. If a superclass (like TemplateView) has get_context_data, call it.
+        # Otherwise, start with an empty dictionary.
+        context = {}
+        if hasattr(super(), 'get_context_data'):
+            context = super().get_context_data(**kwargs)
 
-# --- Existing Unified Request List View with Search and Filtering ---
+        # Base breadcrumbs for the support dashboard
+        if 'breadcrumbs' not in context: # Ensure it's not overwritten if base already set it
+            context['breadcrumbs'] = []
+        context['breadcrumbs'].append({'name': 'Dashboard', 'url': reverse_lazy('support_dashboard:request_list')})
+        return context
+
+
+# --- Mixin for Admin-level User Management Access ---
+class UserAdminRequiredMixin(SupportDashboardMixin):
+    """
+    Mixin to ensure only superusers can access user management pages.
+    You could adjust this to check for specific permissions like 'auth.change_user'
+    if you want to delegate user management to non-superuser staff members.
+    For now, it strictly checks for is_superuser.
+    """
+    def test_func(self):
+        # Must be authenticated, staff, AND superuser
+        return super().test_func() and self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(self.get_login_url())
+        messages.error(self.request, "You need administrator (superuser) privileges to manage users.")
+        # Redirect to the support dashboard list for staff members
+        return redirect('support_dashboard:request_list')
+
+# --- Unified Request List View with Search and Filtering ---
 class RequestListView(SupportDashboardMixin, View):
     template_name = 'support_dashboard/request_list.html'
 
@@ -152,7 +200,7 @@ class RequestListView(SupportDashboardMixin, View):
 
         return stats
 
-# --- Existing RequestDetailView ---
+# --- RequestDetailView ---
 class RequestDetailView(SupportDashboardMixin, View):
     template_name = 'support_dashboard/request_detail.html'
     model_map = {
@@ -168,18 +216,24 @@ class RequestDetailView(SupportDashboardMixin, View):
             raise Http404("Invalid request type.")
         return get_object_or_404(model.objects.select_related('submitted_by', 'assigned_to'), pk=pk)
 
-    def get_context_data(self, request_obj, status_form=None, assignment_form=None):
+    def get_context_data(self, request_obj, status_form=None, assignment_form=None, **kwargs):
+        context = super().get_context_data(**kwargs) # Get base breadcrumbs
+        # Add breadcrumbs for Request Detail
+        context['breadcrumbs'].append({'name': 'All Requests', 'url': reverse_lazy('support_dashboard:request_list')})
+        context['breadcrumbs'].append({'name': f"{request_obj.request_type_slug.replace('_', ' ').title()} #{request_obj.pk}", 'url': reverse_lazy('support_dashboard:request_detail', kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk})})
+        
         if status_form is None:
             status_form = RequestStatusUpdateForm(initial={'status': request_obj.status})
         if assignment_form is None:
             assignment_form = RequestAssignmentUpdateForm(initial={'assigned_to': request_obj.assigned_to})
 
-        return {
+        context.update ({
             'request_obj': request_obj,
             'request_type_display': request_obj.request_type_slug.replace('_', ' ').title(),
             'status_form': status_form,
             'assignment_form': assignment_form,
-        }
+        })
+        return context
 
     def get(self, request, request_type, pk, *args, **kwargs):
         request_obj = self.get_object(request_type, pk)
@@ -244,8 +298,7 @@ class RequestTrendView(SupportDashboardMixin, View):
         return render(request, self.template_name, {})
 
 
-# --- NEW: Category Management Views ---
-
+# --- Category Management Views ---
 class CategoryBaseMixin(SupportDashboardMixin):
     """
     Base mixin for category management views to dynamically set model, form, and URLs.
@@ -284,11 +337,17 @@ class CategoryBaseMixin(SupportDashboardMixin):
         context['category_type_slug'] = self.category_type_slug
         context['verbose_name'] = self.verbose_name
         context['verbose_name_plural'] = self.verbose_name_plural
+
+        # Add breadcrumbs for Category Management
+        context['breadcrumbs'].append({'name': 'Manage Categories', 'url': reverse_lazy('support_dashboard:category_list', kwargs={'category_type_slug': self.category_type_slug})})
+
         # Add a title for the page
-        if hasattr(self, 'object') and self.object: # For UpdateView
-            context['page_title'] = f"Edit {self.verbose_name}"
+        if hasattr(self, 'object') and self.object:
+                context['page_title'] = f"Edit {self.verbose_name}: {self.object.name}"
+                context['breadcrumbs'].append({'name': f"Edit '{self.object.name}'", 'url': self.request.path})
         else: # For CreateView
             context['page_title'] = f"Add New {self.verbose_name}"
+            context['breadcrumbs'].append({'name': f"Add New {self.verbose_name}", 'url': self.request.path})
         return context
 
 # View to list all categories of a specific type
@@ -304,6 +363,7 @@ class CategoryListView(CategoryBaseMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = self.verbose_name_plural
         context['category_models'] = self.CATEGORY_MODELS # For navigation links between categories
+        context['breadcrumbs'][-1] = {'name': self.verbose_name_plural, 'url': reverse_lazy('support_dashboard:category_list', kwargs={'category_type_slug': self.category_type_slug})}
         return context
 
 # View to create a new category of a specific type
@@ -337,4 +397,174 @@ class CategoryDeleteView(CategoryBaseMixin, DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = f"Confirm Delete {self.verbose_name}"
+        # Add specific breadcrumb for delete confirmation
+        context['breadcrumbs'].append({'name': f"Delete '{self.object.name}'", 'url': self.request.path})
         return context
+    
+# --- User Management Views ---
+class UserListView(UserAdminRequiredMixin, ListView):
+    """
+    Lists all user accounts. Requires superuser privileges.
+    """
+    model = User
+    template_name = 'support_dashboard/user_list.html' # Create this template next
+    context_object_name = 'users'
+    ordering = ['username'] # Order users alphabetically by username
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Manage Users"
+        context['breadcrumbs'].append({'name': 'Manage Users', 'url': reverse_lazy('support_dashboard:user_list')})
+        return context
+
+class UserCreateView(UserAdminRequiredMixin, CreateView):
+    """
+    Allows creating new user accounts. Requires superuser privileges.
+    """
+    model = User
+    form_class = UserCreateForm # Use the form that makes password required for new users
+    template_name = 'support_dashboard/user_form.html' # Use a generic form template
+    success_url = reverse_lazy('support_dashboard:user_list') # Redirect to user list after creation
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Add New User"
+        context['breadcrumbs'].append({'name': 'Manage Users', 'url': reverse_lazy('support_dashboard:user_list')})
+        context['breadcrumbs'].append({'name': 'Add New User', 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"User '{form.instance.username}' created successfully.")
+        return super().form_valid(form)
+
+class UserUpdateView(UserAdminRequiredMixin, UpdateView):
+    """
+    Allows updating existing user accounts. Requires superuser privileges.
+    """
+    model = User
+    form_class = UserAdminForm # Use the form where password is optional for updates
+    template_name = 'support_dashboard/user_form.html' # Reuses generic form template
+    pk_url_kwarg = 'user_pk' # Expected keyword argument in URL for user primary key
+    context_object_name = 'user_obj' # Name for the user object in the template
+    success_url = reverse_lazy('support_dashboard:user_list') # Redirect to user list after update
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Edit User: {self.object.username}"
+        context['breadcrumbs'].append({'name': 'Manage Users', 'url': reverse_lazy('support_dashboard:user_list')})
+        context['breadcrumbs'].append({'name': f"Edit '{self.object.username}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"User '{form.instance.username}' updated successfully.")
+        return super().form_valid(form)
+
+class UserDeleteView(UserAdminRequiredMixin, DeleteView):
+    """
+    Allows deleting user accounts. Requires superuser privileges.
+    Prevents deletion of self.
+    """
+    model = User
+    template_name = 'support_dashboard/user_confirm_delete.html' # Create this template next
+    pk_url_kwarg = 'user_pk'
+    context_object_name = 'user_obj'
+    success_url = reverse_lazy('support_dashboard:user_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Confirm Delete User: {self.object.username}"
+        context['breadcrumbs'].append({'name': 'Manage Users', 'url': reverse_lazy('support_dashboard:user_list')})
+        context['breadcrumbs'].append({'name': f"Delete '{self.object.username}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        # Prevent a superuser from deleting their own account via this interface
+        if self.request.user.pk == self.object.pk:
+            messages.error(self.request, "You cannot delete your own user account through this interface.")
+            return redirect(self.get_success_url())
+        
+        messages.success(self.request, f"User '{self.object.username}' deleted successfully.")
+        return super().form_valid(form)
+
+# --- Group Management Views (with Breadcrumbs) ---
+
+class GroupListView(UserAdminRequiredMixin, ListView):
+    """
+    Lists all user groups. Requires superuser privileges.
+    """
+    model = Group
+    template_name = 'support_dashboard/group_list.html' # Create this template next
+    context_object_name = 'groups'
+    ordering = ['name'] # Order groups alphabetically by name
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Manage Groups"
+        context['breadcrumbs'].append({'name': 'Manage Groups', 'url': reverse_lazy('support_dashboard:group_list')})
+        return context
+
+
+class GroupCreateView(UserAdminRequiredMixin, CreateView):
+    """
+    Allows creating new user groups. Requires superuser privileges.
+    """
+    model = Group
+    form_class = GroupForm # Use the new GroupForm
+    template_name = 'support_dashboard/group_form.html' # Use a generic form template
+    success_url = reverse_lazy('support_dashboard:group_list') # Redirect to group list after creation
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Add New Group"
+        context['breadcrumbs'].append({'name': 'Manage Groups', 'url': reverse_lazy('support_dashboard:group_list')})
+        context['breadcrumbs'].append({'name': 'Add New Group', 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Group '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+
+class GroupUpdateView(UserAdminRequiredMixin, UpdateView):
+    """
+    Allows updating existing user groups. Requires superuser privileges.
+    """
+    model = Group
+    form_class = GroupForm # Use the new GroupForm
+    template_name = 'support_dashboard/group_form.html' # Reuses generic form template
+    pk_url_kwarg = 'group_pk' # Expected keyword argument in URL for group primary key
+    context_object_name = 'group_obj' # Name for the group object in the template
+    success_url = reverse_lazy('support_dashboard:group_list') # Redirect to group list after update
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Edit Group: {self.object.name}"
+        context['breadcrumbs'].append({'name': 'Manage Groups', 'url': reverse_lazy('support_dashboard:group_list')})
+        context['breadcrumbs'].append({'name': f"Edit '{self.object.name}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Group '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+
+class GroupDeleteView(UserAdminRequiredMixin, DeleteView):
+    """
+    Allows deleting user groups. Requires superuser privileges.
+    """
+    model = Group
+    template_name = 'support_dashboard/group_confirm_delete.html' # Create this template next
+    pk_url_kwarg = 'group_pk'
+    context_object_name = 'group_obj'
+    success_url = reverse_lazy('support_dashboard:group_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Confirm Delete Group: {self.object.name}"
+        context['breadcrumbs'].append({'name': 'Manage Groups', 'url': reverse_lazy('support_dashboard:group_list')})
+        context['breadcrumbs'].append({'name': f"Delete '{self.object.name}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"Group '{self.object.name}' deleted successfully.")
+        return super().form_valid(form)

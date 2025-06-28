@@ -5,7 +5,9 @@
 
 {% block content %}
 <div class="container mt-4">
+    {# Include Breadcrumbs #}
     {% include 'support_dashboard/_breadcrumbs.html' %}
+
     <h2 class="mb-4">{{ page_title }}</h2>
 
     {# Display Django Messages #}
@@ -25,10 +27,10 @@
     <div class="card shadow-sm border-danger">
         <div class="card-body">
             <p class="lead text-center text-danger">
-                Are you sure you want to delete the "{{ object.name }}" {{ verbose_name }}?
+                Are you sure you want to delete the group "{{ group_obj.name }}"?
             </p>
             <p class="text-center text-muted">
-                This action cannot be undone.
+                This action cannot be undone. Users currently assigned to this group will no longer be members of it.
             </p>
 
             <form method="post" class="text-center mt-4">
@@ -36,7 +38,7 @@
                 <button type="submit" class="btn btn-danger btn-lg mr-3">
                     <i class="fas fa-trash-alt mr-2"></i> Confirm Delete
                 </button>
-                <a href="{% url 'support_dashboard:category_list' category_type_slug=category_type_slug %}" class="btn btn-secondary btn-lg">
+                <a href="{% url 'support_dashboard:group_list' %}" class="btn btn-secondary btn-lg">
                     <i class="fas fa-times mr-2"></i> Cancel
                 </a>
             </form>
