@@ -63,6 +63,7 @@ ehthumbs.db
 *.sqlite3
 db.sqlite3
 /data/db.sqlite3 # Assuming you might put it in a 'data' folder
+*.db
 # Media and static files (user-uploaded content, generated static files)
 /media/
 /static/
