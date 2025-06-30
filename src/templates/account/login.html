@@ -27,17 +27,34 @@
 
                         {# Loop through form fields to apply Bootstrap classes #}
                         {% for field in form %}
-                            <div class="form-group mb-3">
-                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                                {# Use widget_tweaks to add Bootstrap's form-control class #}
-                                {{ field|add_class:"form-control" }}
-                                {% if field.help_text %}
-                                    <small class="form-text text-muted">{{ field.help_text }}</small>
-                                {% endif %}
-                                {% if field.errors %}
-                                    <div class="text-danger small">{{ field.errors }}</div>
-                                {% endif %}
-                            </div>
+                            {% if field.name == 'remember' %}
+                                {# Special handling for the "Remember Me" checkbox #}
+                                <div class="form-check mb-3">
+                                    {{ field }} {# The checkbox input itself #}
+                                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                                        {{ field.label }}
+                                    </label>
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                {# Standard handling for other fields (e.g., username, password) #}
+                                <div class="form-group mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                    {# Use widget_tweaks to add Bootstrap's form-control class #}
+                                    {{ field|add_class:"form-control" }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
                         {% endfor %}
 
                         {# This hidden field is used by allauth for redirection logic; keep it #}

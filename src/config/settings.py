@@ -179,7 +179,7 @@ ACCOUNT_UNIQUE_EMAIL = True           # Email addresses must be unique
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 # ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True # User has to enter password twice on signup
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_SESSION_REMEMBER = True       # "Remember me" option on login
+ACCOUNT_SESSION_REMEMBER = None    # "Remember me" option on login, if set to True the session will be persistend respecting SESSION_COOKIE_AGE, False will force-browser expiry
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory' # Email verification is mandatory
 # ACCOUNT_EMAIL_VERIFICATION = 'optional' # For optional email verification
 # ACCOUNT_EMAIL_VERIFICATION = 'none' # For no email verification
@@ -267,3 +267,10 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(minutes=10), # For testing, run every 10 minutes
     },
 }
+
+# SESSION HANDLING/SETTINGS
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 3600  # 1 hour, adjust as needed for a reasonable maximum
