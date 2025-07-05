@@ -7,7 +7,10 @@ from .views import (
      # Importing the new user management views
     UserListView, UserCreateView, UserUpdateView, UserDeleteView,
     # Import the new group management views
-    GroupListView, GroupCreateView, GroupUpdateView, GroupDeleteView
+    GroupListView, GroupCreateView, GroupUpdateView, GroupDeleteView,
+    # FAQS
+    FAQCategoryListView, FAQCategoryCreateView, FAQCategoryUpdateView, FAQCategoryDeleteView,
+    FAQItemListView, FAQItemCreateView, FAQItemUpdateView, FAQItemDeleteView,
 )
 
 app_name = 'support_dashboard' # Important for namespacing
@@ -71,5 +74,18 @@ urlpatterns = [
 
     # Delete an existing group
     # The 'group_pk' corresponds to pk_url_kwarg in GroupDeleteView
-    path('groups/<int:group_pk>/delete/', GroupDeleteView.as_view(), name='group_delete'),
+    path('groups/<int:group_pk>/delete/', GroupDeleteView.as_view(), name='group_delete'),# --- NEW: FAQ Management URLs ---
+    # FAQ Category Management
+    path('faqs/categories/', FAQCategoryListView.as_view(), name='faq_category_list'),
+    path('faqs/categories/add/', FAQCategoryCreateView.as_view(), name='faq_category_create'),
+    path('faqs/categories/<int:pk>/edit/', FAQCategoryUpdateView.as_view(), name='faq_category_update'),
+    path('faqs/categories/<int:pk>/delete/', FAQCategoryDeleteView.as_view(), name='faq_category_delete'),
+
+    # FAQ Item Management
+    path('faqs/items/', FAQItemListView.as_view(), name='faq_item_list'),
+    path('faqs/items/add/', FAQItemCreateView.as_view(), name='faq_item_create'),
+    path('faqs/items/<int:pk>/edit/', FAQItemUpdateView.as_view(), name='faq_item_update'),
+    path('faqs/items/<int:pk>/delete/', FAQItemDeleteView.as_view(), name='faq_item_delete'),
+
+
 ]

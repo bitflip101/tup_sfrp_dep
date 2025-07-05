@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'attachments',
     'support_dashboard',
     'user_dashboard',
+    'faqs',
+    'taggit',
 
     # allauth apps
     'allauth',

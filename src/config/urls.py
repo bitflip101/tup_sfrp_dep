@@ -16,6 +16,9 @@ urlpatterns = [
     path('requests/', include("unified_requests.urls")),
     path('support-dashboard/', include("support_dashboard.urls")),
     path('user-dashboard/', include('user_dashboard.urls')),
+
+    # FAQS
+    path('faqs/', include('faqs.urls')),
 ]
 
 if settings.DEBUG:

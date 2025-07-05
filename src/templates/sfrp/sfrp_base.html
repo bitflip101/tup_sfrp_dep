@@ -25,6 +25,49 @@
                 padding-right: 15px;
             }
         }
+        /* Custom footer styling for better appearance */
+        .footer-section {
+            padding: 30px 0;
+            background-color: #212529; /* Dark background */
+            color: #f8f9fa; /* Light text */
+            border-top: 1px solid rgba(255, 255, 255, 0.1); /* Subtle top border */
+        }
+        .footer-section h5 {
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+        .footer-section ul li a {
+            color: #adb5bd; /* Lighter text for links */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer-section ul li a:hover {
+            color: #ffffff; /* White on hover */
+        }
+        .social-icons a {
+            color: #adb5bd;
+            font-size: 24px;
+            margin-right: 15px;
+            transition: color 0.3s ease;
+        }
+        .social-icons a:hover {
+            color: #ffffff;
+        }
+        .footer-bottom {
+            background-color: #1a1d20; /* Slightly darker bottom bar */
+            padding: 15px 0;
+            color: #adb5bd;
+            font-size: 0.9em;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -43,6 +86,10 @@
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'abode:sfrp_lp' %}">Home</a>
+                    </li>
+                    {# NEW: FAQ link in Navbar (optional, but good for visibility) #}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'faqs:faq_list' %}">FAQ</a>
                     </li>
                     {% if user.is_authenticated %}
                         {% if user.is_staff %}
@@ -84,12 +131,55 @@
         {% block content %}{% endblock %}
     </main>
 
-    {# Added mt-auto (margin-top: auto) to push the footer to the bottom #}
-    <footer class="bg-dark text-white text-center py-3 mt-auto">
+    {# Enhanced Footer Section #}
+    <footer class="footer-section mt-auto">
         <div class="container">
-            <p class="mb-0">&copy; {% now "Y" %} TUP. All rights reserved.</p>
+            <div class="row">
+                {# About the Portal Column #}
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>About TUP - SFRP</h5>
+                    <p class="text-secondary">
+                        Your centralized platform for feedback and resolution at TUP. Inspired by the 8888 Citizens' Complaint Center, we provide a streamlined channel for complaints, service requests, inquiries, and emergency assistance, ensuring your concerns are heard and addressed efficiently.
+                    </p>
+                </div>
+
+                {# Quick Links Column #}
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'abode:sfrp_lp' %}">Home</a></li>
+                        <li><a href="{% url 'unified_requests:submit_request' %}">Submit a Request</a></li>
+                        <li><a href="{% url 'faqs:faq_list' %}">Frequently Asked Questions</a></li> {# FAQ Link #}
+                        {# Add more links as needed, e.g., Privacy Policy, Terms of Service #}
+                        {# <li><a href="{% url 'privacy_policy' %}">Privacy Policy</a></li> #}
+                        {# <li><a href="{% url 'terms_of_service' %}">Terms of Service</a></li> #}
+                    </ul>
+                </div>
+
+                {# Contact & Social Column #}
+                <div class="col-md-4">
+                    <h5>Contact Us</h5>
+                    <ul class="list-unstyled text-secondary">
+                        <li><i class="fas fa-map-marker-alt mr-2"></i> Ayala Blvd, Ermita, Manila, 1000 Metro Manila</li>
+                        <li><i class="fas fa-phone mr-2"></i> +63 2 8525 6184 (Main Hotline)</li>
+                        <li><i class="fas fa-envelope mr-2"></i> support@tup.edu.ph</li>
+                    </ul>
+                    <div class="social-icons mt-3">
+                        <a href="#" target="_blank" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        {# Add more social media links as needed #}
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
+    {# Copyright Bar #}
+    <div class="footer-bottom text-center">
+        <div class="container">
+            <p class="mb-0">&copy; {% now "Y" %} Technological University of the Philippines. All rights reserved.</p>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>

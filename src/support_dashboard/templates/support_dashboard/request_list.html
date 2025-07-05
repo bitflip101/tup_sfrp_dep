@@ -1,5 +1,5 @@
 {# support_dashboard/templates/support_dashboard/request_list.html #}
-{% extends 'sfrp/sfrp_base.html' %} {# Ensure this path is correct for your base template #}
+{% extends 'sfrp/sfrp_base.html' %}
 {% load static %}
 {% load dashboard_extras %} {# Make sure dashboard_extras.py is set up correctly with 'replace' filter #}
 
@@ -16,6 +16,10 @@
             {# Link to Category Management #}
             <a href="{% url 'support_dashboard:category_list' category_type_slug='complaint' %}" class="btn btn-outline-dark mr-2">
                 <i class="fas fa-cogs mr-2"></i> Manage Categories
+            </a>
+            {# Link to FAQ Management #}
+            <a href="{% url 'support_dashboard:faq_item_list' %}" class="btn btn-outline-dark mr-2">
+                <i class="fas fa-question-circle mr-2"></i> Manage FAQs
             </a>
             {# Link to User Management (only if superuser) #}
             {% if request.user.is_superuser %}

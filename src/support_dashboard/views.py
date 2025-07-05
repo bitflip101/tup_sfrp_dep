@@ -17,18 +17,22 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group # Import Group model
 User = get_user_model()
 
-# Import models from their respective apps
+# Import models from request types respective apps
 from complaints.models import Complaint, ComplaintCategory
 from services.models import ServiceRequest, ServiceType
 from inquiries.models import Inquiry, InquiryCategory
 from emergencies.models import EmergencyReport, EmergencyType
+
+# Import FAQ models
+from faqs.models import FAQCategory, FAQItem
 
 # Import forms (including the new ModelForms, CATEGORY_FORMS map, and User/Group Forms)
 from .forms import (
     RequestStatusUpdateForm, RequestAssignmentUpdateForm, RequestFilterForm,
     ComplaintCategoryForm, ServiceTypeForm, InquiryCategoryForm, EmergencyTypeForm, CATEGORY_FORMS,
     UserAdminForm, UserCreateForm, # User forms
-    GroupForm # Group management form
+    GroupForm, # Group management form
+    FAQCategoryForm, FAQItemForm, # Import FAQ forms
 )
 
 # Import notification utilities
@@ -92,6 +96,16 @@ class UserAdminRequiredMixin(SupportDashboardMixin):
         messages.error(self.request, "You need administrator (superuser) privileges to manage users.")
         # Redirect to the support dashboard list for staff members
         return redirect('support_dashboard:request_list')
+
+# --- Mixin for FAQ Management Access & Breadcrumbs ---
+class FAQManagementMixin(SupportDashboardMixin):
+    """
+    Mixin for FAQ management views to provide common breadcrumbs and page titles.
+    """
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumbs'].append({'name': 'Manage FAQs', 'url': reverse_lazy('support_dashboard:faq_item_list')})
+        return context
 
 # --- Unified Request List View with Search and Filtering ---
 class RequestListView(SupportDashboardMixin, View):
@@ -487,7 +501,6 @@ class UserDeleteView(UserAdminRequiredMixin, DeleteView):
         return super().form_valid(form)
 
 # --- Group Management Views (with Breadcrumbs) ---
-
 class GroupListView(UserAdminRequiredMixin, ListView):
     """
     Lists all user groups. Requires superuser privileges.
@@ -502,7 +515,6 @@ class GroupListView(UserAdminRequiredMixin, ListView):
         context['page_title'] = "Manage Groups"
         context['breadcrumbs'].append({'name': 'Manage Groups', 'url': reverse_lazy('support_dashboard:group_list')})
         return context
-
 
 class GroupCreateView(UserAdminRequiredMixin, CreateView):
     """
@@ -523,7 +535,6 @@ class GroupCreateView(UserAdminRequiredMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, f"Group '{form.instance.name}' created successfully.")
         return super().form_valid(form)
-
 
 class GroupUpdateView(UserAdminRequiredMixin, UpdateView):
     """
@@ -547,7 +558,6 @@ class GroupUpdateView(UserAdminRequiredMixin, UpdateView):
         messages.success(self.request, f"Group '{form.instance.name}' updated successfully.")
         return super().form_valid(form)
 
-
 class GroupDeleteView(UserAdminRequiredMixin, DeleteView):
     """
     Allows deleting user groups. Requires superuser privileges.
@@ -567,4 +577,174 @@ class GroupDeleteView(UserAdminRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         messages.success(self.request, f"Group '{self.object.name}' deleted successfully.")
+        return super().form_valid(form)
+    
+# --- FAQ Management Views ---
+class FAQCategoryListView(FAQManagementMixin, ListView):
+    """
+    Lists all FAQ categories for management.
+    """
+    model = FAQCategory
+    template_name = 'support_dashboard/faqs/category_list.html'
+    context_object_name = 'categories'
+    ordering = ['order', 'name']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Manage FAQ Categories"
+        # The 'Manage FAQs' breadcrumb is handled by FAQManagementMixin
+        context['breadcrumbs'].append({'name': 'Categories List', 'url': reverse_lazy('support_dashboard:faq_category_list')})
+        return context
+
+class FAQCategoryCreateView(FAQManagementMixin, CreateView):
+    """
+    Allows creating new FAQ categories.
+    """
+    model = FAQCategory
+    form_class = FAQCategoryForm
+    template_name = 'support_dashboard/faqs/faq_form.html' # Generic form template
+    success_url = reverse_lazy('support_dashboard:faq_category_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Add New FAQ Category"
+        context['form_title'] = "Add New FAQ Category"
+        context['breadcrumbs'].append({'name': 'Add New Category', 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"FAQ Category '{form.instance.name}' created successfully.")
+        return super().form_valid(form)
+
+class FAQCategoryUpdateView(FAQManagementMixin, UpdateView):
+    """
+    Allows updating existing FAQ categories.
+    """
+    model = FAQCategory
+    form_class = FAQCategoryForm
+    template_name = 'support_dashboard/faqs/faq_form.html' # Generic form template
+    context_object_name = 'obj' # Generic object name for the form template
+    success_url = reverse_lazy('support_dashboard:faq_category_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Edit FAQ Category: {self.object.name}"
+        context['form_title'] = f"Edit FAQ Category: {self.object.name}"
+        context['breadcrumbs'].append({'name': f"Edit '{self.object.name}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"FAQ Category '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+class FAQCategoryDeleteView(FAQManagementMixin, DeleteView):
+    """
+    Allows deleting FAQ categories.
+    """
+    model = FAQCategory
+    template_name = 'support_dashboard/faqs/faq_confirm_delete.html' # Generic delete confirmation template
+    context_object_name = 'obj' # Generic object name for the delete template
+    success_url = reverse_lazy('support_dashboard:faq_category_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Confirm Delete FAQ Category: {self.object.name}"
+        context['delete_message'] = f"Are you sure you want to delete the FAQ category '{self.object.name}'? All associated FAQ items will also be deleted."
+        context['breadcrumbs'].append({'name': f"Delete '{self.object.name}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"FAQ Category '{self.object.name}' and its items deleted successfully.")
+        return super().form_valid(form)
+
+
+class FAQItemListView(FAQManagementMixin, ListView):
+    """
+    Lists all FAQ items for management, with optional filtering by category.
+    """
+    model = FAQItem
+    template_name = 'support_dashboard/faqs/item_list.html'
+    context_object_name = 'items'
+    ordering = ['category__order', 'order', 'question']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        category_id = self.request.GET.get('category')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Manage FAQ Items"
+        context['categories'] = FAQCategory.objects.all().order_by('order', 'name') # For the filter dropdown
+        context['selected_category_id'] = self.request.GET.get('category')
+        if context['selected_category_id']:
+            try:
+                context['selected_category_name'] = FAQCategory.objects.get(id=context['selected_category_id']).name
+            except FAQCategory.DoesNotExist:
+                context['selected_category_name'] = None
+        
+        context['breadcrumbs'].append({'name': 'Items List', 'url': reverse_lazy('support_dashboard:faq_item_list')})
+        return context
+
+class FAQItemCreateView(FAQManagementMixin, CreateView):
+    """
+    Allows creating new FAQ items.
+    """
+    model = FAQItem
+    form_class = FAQItemForm
+    template_name = 'support_dashboard/faqs/faq_form.html' # Generic form template
+    success_url = reverse_lazy('support_dashboard:faq_item_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = "Add New FAQ Item"
+        context['form_title'] = "Add New FAQ Item"
+        context['breadcrumbs'].append({'name': 'Add New Item', 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"FAQ Item '{form.instance.question}' created successfully.")
+        return super().form_valid(form)
+
+class FAQItemUpdateView(FAQManagementMixin, UpdateView):
+    """
+    Allows updating existing FAQ items.
+    """
+    model = FAQItem
+    form_class = FAQItemForm
+    template_name = 'support_dashboard/faqs/faq_form.html' # Generic form template
+    context_object_name = 'obj' # Generic object name for the form template
+    success_url = reverse_lazy('support_dashboard:faq_item_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Edit FAQ Item: {self.object.question}"
+        context['form_title'] = f"Edit FAQ Item: {self.object.question}"
+        context['breadcrumbs'].append({'name': f"Edit '{self.object.question}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"FAQ Item '{form.instance.question}' updated successfully.")
+        return super().form_valid(form)
+
+class FAQItemDeleteView(FAQManagementMixin, DeleteView):
+    """
+    Allows deleting FAQ items.
+    """
+    model = FAQItem
+    template_name = 'support_dashboard/faqs/faq_confirm_delete.html' # Generic delete confirmation template
+    context_object_name = 'obj' # Generic object name for the delete template
+    success_url = reverse_lazy('support_dashboard:faq_item_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f"Confirm Delete FAQ Item: {self.object.question}"
+        context['delete_message'] = f"Are you sure you want to delete the FAQ item: '{self.object.question}'?"
+        context['breadcrumbs'].append({'name': f"Delete '{self.object.question}'", 'url': self.request.path})
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, f"FAQ Item '{self.object.question}' deleted successfully.")
         return super().form_valid(form)

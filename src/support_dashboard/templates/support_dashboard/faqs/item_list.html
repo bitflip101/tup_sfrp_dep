@@ -1,0 +1,116 @@
+{# support_dashboard/templates/support_dashboard/faqs/item_list.html #}
+{% extends 'sfrp/sfrp_base.html' %}
+{% load i18n %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    {# Breadcrumbs #}
+    {% include 'support_dashboard/_breadcrumbs.html' %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ page_title }}</h2>
+        <div>
+            <a href="{% url 'support_dashboard:faq_category_list' %}" class="btn btn-outline-info mr-2">
+                <i class="fas fa-cogs mr-2"></i> Manage FAQ Categories
+            </a>
+            <a href="{% url 'support_dashboard:faq_item_create' %}" class="btn btn-success">
+                <i class="fas fa-plus-circle mr-2"></i> Add New FAQ Item
+            </a>
+        </div>
+    </div>
+
+    {# Filter by Category #}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filter FAQ Items</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-row align-items-end">
+                <div class="form-group col-md-4">
+                    <label for="id_category">Filter by Category:</label>
+                    <select name="category" id="id_category" class="form-control">
+                        <option value="" {% if not selected_category_id %}selected{% endif %}>All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id|stringformat:"s" == selected_category_id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group col-md-auto ml-auto">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'support_dashboard:faq_item_list' %}" class="btn btn-outline-secondary ml-2">Reset Filter</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if items %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                {% if selected_category_name %}
+                    FAQ Items in "{{ selected_category_name }}"
+                {% else %}
+                    All FAQ Items
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Category</th>
+                            <th>Question</th>
+                            <th>Published</th>
+                            <th>Order</th>
+                            <th>Tags</th> {# NEW: Added Tags column header #}
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.category.name }}</td>
+                            <td>{{ item.question|truncatechars:100 }}</td>
+                            <td>
+                                {% if item.is_published %}
+                                    <i class="fas fa-check-circle text-success"></i> Yes
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i> No
+                                {% endif %}
+                            </td>
+                            <td>{{ item.order }}</td>
+                            <td> {# NEW: Display Tags #}
+                                {% for tag in item.tags.all %}
+                                    <span class="badge badge-secondary mr-1">{{ tag.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">No tags</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <a href="{% url 'support_dashboard:faq_item_update' pk=item.pk %}" class="btn btn-sm btn-primary mr-2">Edit</a>
+                                <a href="{% url 'support_dashboard:faq_item_delete' pk=item.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        {% trans "No FAQ items found." %}
+        {% if selected_category_name %}
+            {% blocktrans with category_name=selected_category_name %}There are no FAQ items in the "{{ category_name }}" category.{% endblocktrans %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

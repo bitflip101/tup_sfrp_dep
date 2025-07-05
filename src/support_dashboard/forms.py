@@ -13,6 +13,9 @@ from services.models import ServiceType
 from inquiries.models import InquiryCategory
 from emergencies.models import EmergencyType
 
+# Import FAQ models
+from faqs.models import FAQCategory, FAQItem
+
 # Get the currently active user model
 User = get_user_model()
 
@@ -25,7 +28,7 @@ REQUEST_TYPE_CHOICES = (
     ('emergency', 'Emergency Report'),
 )
 
-# --- Forms ---
+# --- Forms for All Request---
 class RequestStatusUpdateForm(forms.Form):
     status = forms.ChoiceField(
         choices=STATUS_CHOICES,
@@ -87,8 +90,7 @@ class RequestFilterForm(forms.Form):
             elif isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({'class': 'form-check-input'})
 
-# --- ModelForms for Category Management ---
-
+# --- ModelForms for Request Type/Category Management ---
 class ComplaintCategoryForm(forms.ModelForm):
     class Meta:
         model = ComplaintCategory
@@ -149,9 +151,7 @@ CATEGORY_FORMS = {
     'emergency': EmergencyTypeForm,
 }
 
-
 # --- Forms for User Management ---
-
 class UserAdminForm(forms.ModelForm):
     """
     Form for managing user details (for admin/superuser).
@@ -245,7 +245,6 @@ class UserAdminForm(forms.ModelForm):
                 user.groups.set(self.cleaned_data['groups'])
         return user
 
-
 class UserCreateForm(UserAdminForm):
     """
     Specific form for creating new users, ensuring password fields are required.
@@ -271,7 +270,6 @@ class UserCreateForm(UserAdminForm):
         self.fields['password'].help_text = "Required. Set a password for the new user."
         self.fields['confirm_password'].help_text = "Required. Confirm the password for the new user. Must match."
 
-
 # --- Form for Group Management ---
 class GroupForm(forms.ModelForm):
     """
@@ -288,4 +286,47 @@ class GroupForm(forms.ModelForm):
         }
         help_texts = {
             'name': 'The name of the group. Should be unique.',
+        }
+
+# --- Forms for FAQ Management ---
+class FAQCategoryForm(forms.ModelForm):
+    class Meta:
+        model = FAQCategory
+        fields = ['name', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'name': 'Category Name',
+            'order': 'Display Order',
+        }
+        help_texts = {
+            'order': 'Lower numbers appear first.',
+        }
+
+class FAQItemForm(forms.ModelForm):
+    class Meta:
+        model = FAQItem
+        fields = ['category', 'question', 'answer', 'is_published', 'order', 'tags']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'question': forms.TextInput(attrs={'class': 'form-control'}),
+            'answer': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'is_published': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control'}),
+            # Taggit's default widget is usually fine, but can customize if needed
+            # 'tags': forms.TextInput(attrs={'class': 'form-control'})
+        }
+        labels = {
+            'category': 'FAQ Category',
+            'question': 'Question',
+            'answer': 'Answer',
+            'is_published': 'Publish on Website',
+            'order': 'Display Order',
+            'tags': 'Tags (comma-separated)', # Label for tags
+        }
+        help_texts = {
+            'order': 'Lower numbers appear first within its category.',
+            'tags': 'Enter tags separated by commas (e.g., "Academic Issues, Grades, Complaints").', # Help text for tags
         }
