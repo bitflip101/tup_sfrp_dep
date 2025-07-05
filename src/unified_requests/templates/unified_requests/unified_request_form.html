@@ -3,7 +3,8 @@
 {% block title %}Submit New Request{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+{# Added mb-5 (margin-bottom: 3rem) to the container for spacing from the footer #}
+<div class="container mt-5 mb-5"> 
     <h2>Submit Your Request</h2>
     <p>Please select the type of request you want to submit and fill out the relevant details.</p>
 
@@ -313,9 +314,9 @@
 
             } else if (selectedType === 'inquiry') {
                 inquirySpecificFields.style.display = 'block';
-                commonQuestionFieldGroup.style.display = 'block';
-                questionLabel.textContent = 'Your Question';
-                questionHelpText.textContent = originalQuestionHelpText;
+                commonDescriptionFieldGroup.style.display = 'block'; // Changed from commonQuestionFieldGroup
+                descriptionLabel.textContent = 'Your Question'; // Changed from questionLabel
+                descriptionHelpText.textContent = originalQuestionHelpText; // Changed from questionHelpText
 
             } else if (selectedType === 'emergency') {
                 emergencySpecificFields.style.display = 'block';

@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" class="h-100"> {# Added h-100 to make html element take full height #}
+<html lang="en" class="h-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,71 +8,11 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     
-    {# NEW: Custom CSS for sticky footer and general layout adjustments #}
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Ensure body takes at least full viewport height */
-        }
-        main {
-            flex-grow: 1; /* Allow main content to expand and push footer down */
-        }
-        /* Optional: Adjust container padding for smaller screens if needed */
-        @media (max-width: 767.98px) {
-            .container, .container-fluid {
-                padding-left: 15px;
-                padding-right: 15px;
-            }
-        }
-        /* Custom footer styling for better appearance */
-        .footer-section {
-            padding: 30px 0;
-            background-color: #212529; /* Dark background */
-            color: #f8f9fa; /* Light text */
-            border-top: 1px solid rgba(255, 255, 255, 0.1); /* Subtle top border */
-        }
-        .footer-section h5 {
-            color: #ffffff;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-        .footer-section ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .footer-section ul li {
-            margin-bottom: 8px;
-        }
-        .footer-section ul li a {
-            color: #adb5bd; /* Lighter text for links */
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        .footer-section ul li a:hover {
-            color: #ffffff; /* White on hover */
-        }
-        .social-icons a {
-            color: #adb5bd;
-            font-size: 24px;
-            margin-right: 15px;
-            transition: color 0.3s ease;
-        }
-        .social-icons a:hover {
-            color: #ffffff;
-        }
-        .footer-bottom {
-            background-color: #1a1d20; /* Slightly darker bottom bar */
-            padding: 15px 0;
-            color: #adb5bd;
-            font-size: 0.9em;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/sfrp_styles.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="d-flex flex-column h-100"> {# Added d-flex flex-column h-100 to body #}
+<body class="d-flex flex-column h-100">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{% url 'abode:sfrp_lp' %}">
@@ -87,7 +27,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'abode:sfrp_lp' %}">Home</a>
                     </li>
-                    {# NEW: FAQ link in Navbar (optional, but good for visibility) #}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'faqs:faq_list' %}">FAQ</a>
                     </li>
@@ -127,15 +66,14 @@
         </div>
     </nav>
 
-    <main class="flex-shrink-0"> {# Added flex-shrink-0 to main to allow it to shrink if content overflows #}
+    {# NEW: Added pb-5 (padding-bottom: 3rem) to the main content area #}
+    <main class="flex-shrink-0 pb-5"> 
         {% block content %}{% endblock %}
     </main>
 
-    {# Enhanced Footer Section #}
     <footer class="footer-section mt-auto">
         <div class="container">
             <div class="row">
-                {# About the Portal Column #}
                 <div class="col-md-4 mb-4 mb-md-0">
                     <h5>About TUP - SFRP</h5>
                     <p class="text-secondary">
@@ -143,20 +81,15 @@
                     </p>
                 </div>
 
-                {# Quick Links Column #}
                 <div class="col-md-4 mb-4 mb-md-0">
                     <h5>Quick Links</h5>
                     <ul class="list-unstyled">
                         <li><a href="{% url 'abode:sfrp_lp' %}">Home</a></li>
                         <li><a href="{% url 'unified_requests:submit_request' %}">Submit a Request</a></li>
-                        <li><a href="{% url 'faqs:faq_list' %}">Frequently Asked Questions</a></li> {# FAQ Link #}
-                        {# Add more links as needed, e.g., Privacy Policy, Terms of Service #}
-                        {# <li><a href="{% url 'privacy_policy' %}">Privacy Policy</a></li> #}
-                        {# <li><a href="{% url 'terms_of_service' %}">Terms of Service</a></li> #}
+                        <li><a href="{% url 'faqs:faq_list' %}">Frequently Asked Questions</a></li>
                     </ul>
                 </div>
 
-                {# Contact & Social Column #}
                 <div class="col-md-4">
                     <h5>Contact Us</h5>
                     <ul class="list-unstyled text-secondary">
@@ -168,13 +101,11 @@
                         <a href="#" target="_blank" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
                         <a href="#" target="_blank" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
                         <a href="#" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        {# Add more social media links as needed #}
                     </div>
                 </div>
             </div>
         </div>
     </footer>
-    {# Copyright Bar #}
     <div class="footer-bottom text-center">
         <div class="container">
             <p class="mb-0">&copy; {% now "Y" %} Technological University of the Philippines. All rights reserved.</p>
