@@ -7,7 +7,7 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5"> {# Adjust column width as needed #}
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 shadow-lg border-0 rounded">
                 <div class="card-body p-4">
                     <h2 class="card-title text-center mb-4">
                         <i class="fas fa-sign-in-alt text-primary mr-2"></i> {% trans "Sign In" %}
@@ -60,9 +60,9 @@
                         {# This hidden field is used by allauth for redirection logic; keep it #}
                         {{ redirect_field }} 
 
-                        <p class="text-center mt-3">
+                        <!-- <p class="text-center mt-3">
                             <a href="{% url 'account_reset_password' %}" class="small text-muted">{% trans "Forgot Password?" %}</a>
-                        </p>
+                        </p> -->
 
                         <button class="btn btn-primary btn-lg btn-block mt-4 mb-3" type="submit">
                             <i class="fas fa-sign-in-alt mr-2"></i> {% trans "Sign In" %}

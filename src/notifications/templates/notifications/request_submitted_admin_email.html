@@ -15,7 +15,7 @@
 
     {# --- General Request Details --- #}
     <p><strong>Status:</strong> {{ request.get_status_display }}</p>
-    <p><strong>Priority:</strong> {{ request.get_priority_display }}</p>
+    {# --- <p><strong>Priority:</strong> {{ request.get_priority_display }}</p> -- #}
     <p><strong>Submitted By:</strong>
         {% if request.submitted_by %}
             {{ rquest.submitted_by.get_full_name|default:request.submitted_by.username }} ({{ request.submitted_by.email }})

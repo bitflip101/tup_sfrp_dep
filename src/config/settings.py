@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount', # Optional, if you plan to add social logins later
     'django.contrib.sites', # Required by allauth
 
+    # 'i18n',
     'widget_tweaks',
     'django_celery_beat',
 ]
