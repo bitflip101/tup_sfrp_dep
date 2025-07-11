@@ -27,15 +27,6 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
-                    <!-- <p><strong>{% trans "Submitted By:" %}</strong>
-                        {% if request_obj.submitted_by %}
-                            {{ request_obj.submitted_by.get_full_name|default:request_obj.submitted_by.username }}
-                        {% else %}
-                            Anonymous
-                            {% if request_obj.full_name %} ({{ request_obj.full_name }}){% endif %}
-                            {% if request_obj.email %} ({{ request_obj.email }}){% endif %}
-                        {% endif %}
-                    </p> -->
                     <p><strong>{% trans "Current Status:" %}</strong> <span class="badge badge-pill badge-{% if request_obj.status == 'new' %}primary{% elif request_obj.status == 'in_progress' %}warning{% elif request_obj.status == 'resolved' %}success{% elif request_obj.status == 'closed' %}secondary{% elif request_obj.status == 'rejected' %}danger{% else %}dark{% endif %}">{{ request_obj.get_status_display }}</span></p>
                     <p><strong>{% trans "Assigned To:" %}</strong> {{ request_obj.assigned_to.username|default:"N/A" }}</p>
                     <p><strong>{% trans "Submitted On:" %}</strong> {{ request_obj.submitted_at|date:"M d, Y H:i" }}</p>
@@ -45,7 +36,7 @@
                     <p><strong>{% trans "Description:" %}</strong></p>
                     <p>{{ request_obj.description }}</p>
 
-                    {# Type-Specific Details - Re-use the logic from Admin Email Template #}
+                    {# Type-Specific Details #}
                     {% if request_obj.request_type_slug == 'complaint' %}
                         <p><strong>{% trans "Category:" %}</strong> {{ request_obj.category.name|default:"N/A" }}</p>
                     {% elif request_obj.request_type_slug == 'service_request' %}
@@ -61,19 +52,31 @@
                         {% if request_obj.contact_during_emergency %}<p><strong>{% trans "Contact During Emergency:" %}</strong> {{ request_obj.contact_during_emergency }}</p>{% endif %}
                     {% endif %}
 
-                    {# You can add display for attachments here if applicable #}
-                    {# {% if request_obj.attachments %} #}
-                    {#    <p><strong>Attachments:</strong> <a href="{{ request_obj.attachments.url }}" target="_blank">View Attachment</a></p> #}
-                    {# {% endif %} #}
+                    {# NEW: Attachments Section for User Dashboard #}
+                    <hr>
+                    <p><strong>{% trans "Attached File(s):" %}</strong></p>
+                    {% if attachments %}
+                        <ul class="list-group list-group-flush">
+                            {% for attachment in attachments %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="fas fa-paperclip mr-2"></i> {{ attachment.file.name|split_filename }}
+                                    </span>
+                                    <a href="{{ attachment.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download mr-1"></i> {% trans "View/Download" %}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">{% trans "No attachments for this request." %}</p>
+                    {% endif %}
 
                 </div>
             </div>
         </div>
         <div class="card-footer text-right">
             {# Add any user-specific actions here, e.g., "Cancel Request" (requires form/view logic) #}
-            {# <button type="button" class="btn btn-outline-danger">Cancel Request</button> #}
         </div>
     </div>
 {% endblock user_dashboard_content %}
-
-

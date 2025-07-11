@@ -41,6 +41,10 @@ from notifications.utils import send_request_status_update_email, send_request_a
 # Import STATUS_CHOICES from constants
 from unified_requests.constants import STATUS_CHOICES
 
+# For attachments
+from django.contrib.contenttypes.models import ContentType
+from attachments.models import RequestAttachment
+
 # --- Mixin for Staff Access & Breadcrumbs ---
 class SupportDashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
@@ -76,7 +80,6 @@ class SupportDashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
             context['breadcrumbs'] = []
         context['breadcrumbs'].append({'name': 'Dashboard', 'url': reverse_lazy('support_dashboard:request_list')})
         return context
-
 
 # --- Mixin for Admin-level User Management Access ---
 class UserAdminRequiredMixin(SupportDashboardMixin):
@@ -228,6 +231,7 @@ class RequestDetailView(SupportDashboardMixin, View):
         model = self.model_map.get(request_type)
         if not model:
             raise Http404("Invalid request type.")
+        # Use select_related for submitted_by and assigned_to to reduce queries
         return get_object_or_404(model.objects.select_related('submitted_by', 'assigned_to'), pk=pk)
 
     def get_context_data(self, request_obj, status_form=None, assignment_form=None, **kwargs):
@@ -241,24 +245,34 @@ class RequestDetailView(SupportDashboardMixin, View):
         if assignment_form is None:
             assignment_form = RequestAssignmentUpdateForm(initial={'assigned_to': request_obj.assigned_to})
 
+        # --- Fetch Attachments ---
+        attachments = []
+        if request_obj:
+            content_type = ContentType.objects.get_for_model(request_obj.__class__)
+            attachments = RequestAttachment.objects.filter(
+                content_type=content_type,
+                object_id=request_obj.pk
+            )
+
         context.update ({
             'request_obj': request_obj,
             'request_type_display': request_obj.request_type_slug.replace('_', ' ').title(),
             'status_form': status_form,
             'assignment_form': assignment_form,
+            'attachments': attachments, # Add attachments to the context
         })
         return context
 
     def get(self, request, request_type, pk, *args, **kwargs):
         request_obj = self.get_object(request_type, pk)
-        request_obj.request_type_slug = request_type
+        request_obj.request_type_slug = request_type # Ensure this is set for context and template
         
         context = self.get_context_data(request_obj)
         return render(request, self.template_name, context)
 
     def post(self, request, request_type, pk, *args, **kwargs):
         request_obj = self.get_object(request_type, pk)
-        request_obj.request_type_slug = request_type
+        request_obj.request_type_slug = request_type # Ensure this is set for context and template
 
         status_form = RequestStatusUpdateForm(request.POST)
         assignment_form = RequestAssignmentUpdateForm(request.POST)
@@ -294,6 +308,7 @@ class RequestDetailView(SupportDashboardMixin, View):
         else:
             messages.error(request, "Invalid form submission.")
 
+        # Re-render the page with forms and attachments if there were errors
         context = self.get_context_data(request_obj, status_form=status_form, assignment_form=assignment_form)
         return render(request, self.template_name, context)
 
@@ -310,7 +325,6 @@ class RequestTrendView(SupportDashboardMixin, View):
     def get(self, request, *args, **kwargs):
         filter_form = RequestFilterForm(request.GET)
         return render(request, self.template_name, {})
-
 
 # --- Category Management Views ---
 class CategoryBaseMixin(SupportDashboardMixin):
@@ -656,7 +670,6 @@ class FAQCategoryDeleteView(FAQManagementMixin, DeleteView):
     def form_valid(self, form):
         messages.success(self.request, f"FAQ Category '{self.object.name}' and its items deleted successfully.")
         return super().form_valid(form)
-
 
 class FAQItemListView(FAQManagementMixin, ListView):
     """

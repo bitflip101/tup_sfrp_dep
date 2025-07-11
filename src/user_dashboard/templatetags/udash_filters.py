@@ -1,6 +1,16 @@
-from django import template 
+from django import template
+import os
 
 register = template.Library()
+
+@register.filter
+def split_filename(value):
+    """
+    Returns just the filename from a file path.
+    """
+    if value:
+        return os.path.basename(value)
+    return ""
 
 @register.filter
 def replace_chars(value, arg):

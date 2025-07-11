@@ -1,9 +1,9 @@
 # unified_requests/views.py
-from django.shortcuts import render, redirect, get_list_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import View, TemplateView 
 from django.contrib import messages
 from django.db import transaction
-from django.urls import reverse_lazy # Important for reverse_lazy
+from django.urls import reverse_lazy
 import traceback # For debugging
 
 # Your models
@@ -16,9 +16,9 @@ from emergencies.models import EmergencyReport
 from .forms import UnifiedRequestForm
 
 # Your notification utility functions
-from notifications.utils import send_new_request_submission_notifications # Updated import!
+from notifications.utils import send_new_request_submission_notifications
 
-# For attachments (if you have a RequestAttachment model)
+# For attachments
 from django.contrib.contenttypes.models import ContentType
 from attachments.models import RequestAttachment
 
@@ -72,7 +72,6 @@ class UnifiedRequestSubmitView(View):
                 with transaction.atomic():
                     created_object = None 
                     success_message = ""
-                    # redirect_url = reverse_lazy('abode:submit_thanks')
                     # The redirect_url will now ALWAYS go to the success page
                     # The success page itself will handle showing user-specific links if logged in
                     redirect_url_args = {'pk':None, 'request_type': request_type} # Prepare args for redirect
@@ -81,64 +80,51 @@ class UnifiedRequestSubmitView(View):
                     if request_type == 'complaint':
                         created_object = Complaint.objects.create(
                             submitted_by=submitted_by_user,
-                            full_name=anonymous_full_name, # Populated if anonymous, None otherwise
-                            email=anonymous_email,       # Populated if anonymous, None otherwise
+                            full_name=anonymous_full_name, 
+                            email=anonymous_email, # Populated if anonymous, None otherwise
                             phone_number=anonymous_phone,# Populated if anonymous, None otherwise
                             category=form.cleaned_data['complaint_category'],
                             subject=form.cleaned_data['subject'],
                             description=form.cleaned_data['description'],
-                            # priority=form.cleaned_data['complaint_priority'],
-                            # location_address=form.cleaned_data.get('location_address'),
-                            # latitude=form.cleaned_data.get('latitude'),
-                            # longitude=form.cleaned_data.get('longitude'),
                         )
                         success_message = "Your complaint has been submitted successfully."
-                        # For logged-in users, redirect to their list of complaints if it exists
+                        # For logged-in users, redirect to their list of complaints
                         if submitted_by_user:
-                             redirect_url = reverse_lazy('complaints:my_complaints') # Assuming this URL exists
+                             redirect_url = reverse_lazy('complaints:my_complaints')
 
                     elif request_type == 'service':
                         created_object = ServiceRequest.objects.create(
                             submitted_by=submitted_by_user,
-                            full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone, # If your ServiceRequest model has these fields
+                            full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone,
                             service_type=form.cleaned_data['service_type'],
                             subject=form.cleaned_data['subject'],
                             description=form.cleaned_data['description'],
-                            # priority=form.cleaned_data.get('priority'),
-                            # due_date=form.cleaned_data.get('due_date'),
                         )
                         success_message = "Your service request has been submitted successfully."
-                        # For logged-in users, redirect to their list of complaints if it exists
-                        if submitted_by_user:
-                             redirect_url = reverse_lazy('abode:submit_thankss') # Assuming this URL exists
 
                     elif request_type == 'inquiry':
                         created_object = Inquiry.objects.create(
                             submitted_by=submitted_by_user,
-                            full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone, # If your Inquiry model has these fields
+                            full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone,
                             category=form.cleaned_data['inquiry_category'],
                             subject=form.cleaned_data['subject'],
                             # question=form.cleaned_data['question'] # Uses the 'question' field
                             description=form.cleaned_data['description'],
                         )
                         success_message = "Your inquiry has been submitted successfully."
-                        # For logged-in users, redirect to their list of complaints if it exists
-                        if submitted_by_user:
-                             redirect_url = reverse_lazy('abode:submit_thankss') # Assuming this URL exists
 
                     elif request_type == 'emergency':
                         created_object = EmergencyReport.objects.create(
                             submitted_by=submitted_by_user,
-                            full_name=anonymous_full_name, email=anonymous_email, phone_number=anonymous_phone, # If your EmergencyReport model has these fields
+                            full_name=anonymous_full_name, 
+                            email=anonymous_email, 
+                            phone_number=anonymous_phone,
                             emergency_type=form.cleaned_data['emergency_type'],
                             subject=form.cleaned_data['subject'],
                             description=form.cleaned_data['description'],
                             location=form.cleaned_data['location'],
                         )
                         success_message = "Your emergency report has been submitted. Immediate action will be taken."
-                        # For logged-in users, redirect to their list of complaints if it exists
-                        if submitted_by_user:
-                             redirect_url = reverse_lazy('abode:submit_thankss') # Assuming this URL exists
 
                     # --- Common Post-Creation Logic ---
                     if created_object:
@@ -146,22 +132,21 @@ class UnifiedRequestSubmitView(View):
                         # This is crucial for building the correct URLs in the emails
                         created_object.request_type_slug = request_type
                         
-                        # Handle attachments
-                        files = request.FILES.getlist('attachments')
-                        if files:
+                        # Handle attachments, 1 attachment for now.
+                        attached_file = request.FILES.get('attachments')
+                        if attached_file:
                             content_type = ContentType.objects.get_for_model(created_object)
-                            for f in files:
-                                RequestAttachment.objects.create(
-                                    content_type=content_type,
-                                    object_id=created_object.pk,
-                                    file=f,
-                                    uploaded_by=request.user if request.user.is_authenticated else None
-                                )
+                            RequestAttachment.objects.create(
+                                content_type=content_type,
+                                object_id=created_object.pk,
+                                file=attached_file, # Use the single file object for now
+                                uploaded_by=request.user if request.user.is_authenticated else None
+                            )
                             messages.success(request, success_message + " Your attachment(s) have been uploaded.")
                         else:
                             messages.success(request, success_message)
 
-                        # NEW: Call the generic notification function for initial submission
+                        # Call the generic notification function for initial submission
                         send_new_request_submission_notifications(created_object)
 
                         # Update redirect args with actual PK
@@ -171,6 +156,7 @@ class UnifiedRequestSubmitView(View):
                         return redirect('unified_requests:success_page', **redirect_url_args)
                     else:
                         messages.error(request, "Failed to create request object.")
+                        # If created_object is None, it means none of the request types matched or an issue occurred
                         return redirect(request, self.template_name, self.get_context_data(form=form))
 
             else: # Form is not valid
@@ -214,7 +200,17 @@ class SuccessPageView(TemplateView):
                     request_obj = get_object_or_404(model, pk=pk)
                     # Add request_type_slug to the object if it's not a model property
                     request_obj.request_type_slug = request_type_slug
-                except Exception:
+
+                    # Fetch attachments related to this object
+                    content_type = ContentType.objects.get_for_model(model)
+                    attachments = RequestAttachment.objects.filter(
+                        content_type=content_type,
+                        object_id=pk
+                    )
+                    context['attachments'] = attachments # Add attachments to context
+
+                except Exception as e:
+                    print(f"Error fetching request object or attachments: {e}")
                     request_obj = None # Object not found or other error
 
         context['request_obj'] = request_obj

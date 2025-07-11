@@ -1,3 +1,4 @@
+# user_dashboard/views.py
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.contrib.auth.decorators import login_required 
@@ -9,6 +10,10 @@ from complaints.models import Complaint
 from services.models import ServiceRequest 
 from inquiries.models import Inquiry 
 from emergencies.models import EmergencyReport 
+
+# For attachments
+from django.contrib.contenttypes.models import ContentType
+from attachments.models import RequestAttachment # Import the RequestAttachment model
 
 @login_required
 def user_request_list(request):
@@ -115,7 +120,7 @@ def user_request_list(request):
 def user_request_detail(request, request_type_slug, pk):
     template_name = "user_dashboard/user_request_detail.html"
     user = request.user
-    print(user)
+    print(user) # Keep for debugging if needed
 
     request_obj = None
     
@@ -136,6 +141,19 @@ def user_request_detail(request, request_type_slug, pk):
     # This also acts as a security check
     request_obj = get_object_or_404(model, pk=pk, submitted_by=user)
 
-    context = {'request_obj': request_obj}
+    # --- Fetch Attachments for this request ---
+    attachments = []
+    if request_obj:
+        content_type = ContentType.objects.get_for_model(request_obj.__class__)
+        attachments = RequestAttachment.objects.filter(
+            content_type=content_type,
+            object_id=request_obj.pk
+        )
+
+    context = {
+        'request_obj': request_obj,
+        'request_type_slug': request_type_slug, # Pass slug for potential use in template
+        'attachments': attachments, # Add attachments to the context
+    }
 
     return render(request, template_name, context)
