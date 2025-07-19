@@ -141,6 +141,7 @@
             <small class="form-text text-muted">{{ form.subject.help_text }}</small>
         </div>
 
+        {# For Complaint, Services, & Emergency Type of Request #}
         <div id="common_description_field_group" class="form-group mt-3" style="display: none;">
             <label id="description_label" for="{{ form.description.id_for_label }}">Description</label>
             {{ form.description }}
@@ -148,6 +149,7 @@
             <small id="description_help_text" class="form-text text-muted"></small>
         </div>
 
+        {# For Inquiry Type of Request #}
         <div id="common_question_field_group" class="form-group mt-3" style="display: none;">
             <label id="question_label" for="{{ form.question.id_for_label }}">Your Question</label>
             {{ form.question }}
@@ -199,8 +201,7 @@
 
         <hr> {# Separator for visual clarity #}
 
-
-        {# NEW: Privacy Policy Agreement Checkbox #}
+        {# Privacy Policy Agreement Checkbox #}
         <div class="form-check mt-4">
             {{ form.privacy_policy_agreement }}
             <label class="form-check-label" for="{{ form.privacy_policy_agreement.id_for_label }}">
@@ -211,7 +212,6 @@
             <small class="form-text text-muted">{{ form.privacy_policy_agreement.help_text }}</small>
         </div>
 
-
         <button type="submit" class="btn btn-primary mt-3" id="submitButton" disabled>Submit Request</button> {# Submit button initially disabled #}
     </form>
 </div>
@@ -221,9 +221,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const requestTypeSelect = document.getElementById('id_request_type');
-        const reportAnonymouslyCheckbox = document.getElementById('id_report_anonymously'); // NEW
-        const privacyPolicyCheckbox = document.getElementById('id_privacy_policy_agreement'); // NEW
-        const submitButton = document.getElementById('submitButton'); // NEW
+        const reportAnonymouslyCheckbox = document.getElementById('id_report_anonymously'); 
+        const privacyPolicyCheckbox = document.getElementById('id_privacy_policy_agreement'); 
+        const submitButton = document.getElementById('submitButton'); 
 
         const commonDescriptionFieldGroup = document.getElementById('common_description_field_group');
         const commonQuestionFieldGroup = document.getElementById('common_question_field_group');
@@ -234,7 +234,7 @@
         const emergencySpecificFields = document.getElementById('emergency_specific_fields');
 
         const anonymousContactFields = document.getElementById('anonymous_contact_fields');
-        const loginRegisterPrompt = document.getElementById('login_register_prompt'); // NEW
+        const loginRegisterPrompt = document.getElementById('login_register_prompt');  
 
         // References for dynamic label/help text (assuming these exist and are in the common fields)
         const descriptionLabel = document.getElementById('description_label');
@@ -243,8 +243,8 @@
         const questionHelpText = document.getElementById('question_help_text');
 
         // Original help texts from Django forms (make sure these variables are correctly populated by Django)
-        const originalDescriptionHelpText = "{{ form.description.help_text|escapejs }}";
-        const originalQuestionHelpText = "{{ form.question.help_text|escapejs }}";
+        const originalDescriptionHelpText = "{{ form.description.help_text|stringformat:'%s'|escapejs }}";
+        const originalQuestionHelpText = "{{ form.question.help_text|stringformat:'%s'|escapejs }}";
 
         // Check if user is authenticated (passed from Django context)
         const isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
@@ -277,7 +277,7 @@
                     loginRegisterPrompt.style.display = 'block';
                 }
             }
-            // You might want to toggle 'required' attribute on anonymous_email here client-side
+            // might want to toggle 'required' attribute on anonymous_email here client-side
             // document.getElementById('id_anonymous_email').required = reportAnonymouslyCheckbox.checked;
         }
 
@@ -314,9 +314,9 @@
 
             } else if (selectedType === 'inquiry') {
                 inquirySpecificFields.style.display = 'block';
-                commonDescriptionFieldGroup.style.display = 'block'; // Changed from commonQuestionFieldGroup
-                descriptionLabel.textContent = 'Your Question'; // Changed from questionLabel
-                descriptionHelpText.textContent = originalQuestionHelpText; // Changed from questionHelpText
+                commonQuestionFieldGroup.style.display = 'block';
+                questionLabel.textContent = 'Your Question'; // Changed from questionLabel
+                questionHelpText.textContent = originalQuestionHelpText; 
 
             } else if (selectedType === 'emergency') {
                 emergencySpecificFields.style.display = 'block';

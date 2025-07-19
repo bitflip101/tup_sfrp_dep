@@ -22,7 +22,7 @@
                         </div>
                     {% endif %}
 
-                    <form method="post" action="{% url 'account_signup' %}">
+                    <form method="post" action="{% url 'account_signup' %}" novalidate>
                         {% csrf_token %}
 
                         {# Loop through form fields to apply Bootstrap classes #}

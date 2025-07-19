@@ -57,21 +57,6 @@ class UnifiedRequestForm(forms.Form):
         help_text="Your phone number for follow-up (optional)."
     )
 
-
-    # Common fields
-    subject = forms.CharField(
-        max_length=255,
-        required=False, # Make all fields required=False by default, handled in clean()
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        help_text="A brief summary of your request."
-    )
-    
-    description = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
-        required=False,
-        help_text="Provide detailed information about your request."
-    )
-
     # Specific fields for each type
     # Complaint fields
     complaint_category = forms.ModelChoiceField(
@@ -81,23 +66,6 @@ class UnifiedRequestForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
-    # complaint_priority = forms.ChoiceField(
-    #     choices=[
-    #         ('low', 'Low'),
-    #         ('medium', 'Medium'),
-    #         ('high', 'High'),
-    #         ('urgent', 'Urgent'),
-    #     ],
-    #     required=False,
-    #     widget=forms.Select(attrs={'class': 'form-control'})
-    # )
-
-    # attachments = forms.FileField(
-    #     required=False,
-    #     widget=forms.FileInput(attrs={'multiple': False, 'class': 'form-control-file'}),
-    #     help_text="Attach relevant files (e.g., photos, documents)."
-    # )
-
     # Service Assistance fields
     service_type = forms.ModelChoiceField(
         queryset=ServiceType.objects.all(),
@@ -139,6 +107,20 @@ class UnifiedRequestForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         help_text="Specific location of the emergency (e.g., Building A, Room 101)."
+    )
+
+    #---Common fields
+    subject = forms.CharField(
+        max_length=255,
+        required=False, # Make all fields required=False by default, handled in clean()
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        help_text="A brief summary of your request."
+    )
+    
+    description = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
+        required=False,
+        help_text="Provide detailed information about your request."
     )
 
     # --- Checkbox for Privacy Policy Agreement
@@ -184,9 +166,24 @@ class UnifiedRequestForm(forms.Form):
         anonymous_email = cleaned_data.get('anonymous_email')
         anonymous_phone = cleaned_data.get('anonymous_phone')
 
+          # --- Debugging print statements ---
+        print(f"--- UnifiedRequestForm.clean() ---")
+        print(f"Request type: {request_type}")
+        print(f"Subject: '{subject}'")
+        print(f"Description (from form): '{description}'")
+        print(f"Question (from form): '{question}'")
+        print(f"Report Anonymously: {report_anonymously}")
+        print(f"Privacy Policy Agreement: {privacy_policy_agreement}")
+        if self.request and self.request.user.is_authenticated:
+            print(f"User authenticated: {self.request.user}")
+        else:
+            print(f"User not authenticated (anonymous).")
+        # --- End Debugging print statements ---
+
         # --- Privacy Policy Agreement Validation ---
         if not privacy_policy_agreement:
             self.add_error('privacy_policy_agreement', "You must agree to the Privacy Policy to proceed.")
+            print("Error: Privacy policy not agreed.")
 
         # --- Anonymous Submission Logic ---
         if self.request and not self.request.user.is_authenticated:
@@ -194,8 +191,8 @@ class UnifiedRequestForm(forms.Form):
             if not report_anonymously:
                 # If an anonymous user does NOT check "Report Anonymously",
                 # they must be prompted to log in or register.
-                login_url = reverse_lazy('account_login') # Assuming 'account_login' from django-allauth
-                register_url = reverse_lazy('account_signup') # Assuming 'account_signup' from django-allauth
+                login_url = reverse_lazy('account_login') # 'account_login' from django-allauth
+                register_url = reverse_lazy('account_signup') # 'account_signup' from django-allauth
 
                 self.add_error(
                     None, # This makes it a non-field error
@@ -206,11 +203,13 @@ class UnifiedRequestForm(forms.Form):
                         code='not_authenticated_and_not_anonymous'
                     )
                 )
+                print("Error: Not authenticated and not anonymous.")
             else:
                 # User is NOT authenticated AND HAS checked "Report Anonymously"
                 if not anonymous_email:
                     self.add_error('anonymous_email', "An email address is required for follow-up if reporting anonymously.")
                 # anonymous_full_name and anonymous_phone remain optional here
+                    print("Error: Anonymous email required.")
         elif self.request and self.request.user.is_authenticated:
             # User IS authenticated
             # If they check 'report_anonymously', we respect that.
@@ -221,21 +220,19 @@ class UnifiedRequestForm(forms.Form):
         # General validation for required common fields
         if not request_type:
             self.add_error('request_type', "Please select a request type.")
+            print("Error: Request type not selected.")
         if not subject:
             self.add_error('subject', "Subject is required for all request types.")
+            print("Error: Subject is empty.")
 
         # Specific validations based on request_type
         if request_type == 'complaint':
             if not cleaned_data.get('complaint_category'):
                 self.add_error('complaint_category', "Complaint category is required.")
-            if not description:
+                print("Error: Complaint category required.")
+            if not description or not description.strip():
                 self.add_error('description', "Description is required for complaints.")
-            # if not cleaned_data.get('complaint_priority'):
-            #     self.add_error('complaint_priority', "Priority is required for complaints.")
-            # Clear other fields to avoid confusion later
             cleaned_data['service_type'] = None
-            # cleaned_data['priority'] = None
-            # cleaned_data['due_date'] = None
             cleaned_data['inquiry_category'] = None
             cleaned_data['question'] = None
             cleaned_data['emergency_type'] = None
@@ -244,12 +241,12 @@ class UnifiedRequestForm(forms.Form):
         elif request_type == 'service':
             if not cleaned_data.get('service_type'):
                 self.add_error('service_type', "Service type is required.")
-            if not description:
+                print("Error: Service type required.")
+            if not description or not description.strip():
                 self.add_error('description', "Description is required for service requests.")
+                print("Error: Service description empty.")
             # Clear other fields
             cleaned_data['complaint_category'] = None
-            # cleaned_data['complaint_priority'] = None
-            # cleaned_data['location_address'] = None
             cleaned_data['latitude'] = None
             cleaned_data['longitude'] = None
             cleaned_data['attachments'] = None
@@ -260,30 +257,31 @@ class UnifiedRequestForm(forms.Form):
 
         elif request_type == 'inquiry':
             if not cleaned_data.get('inquiry_category'):
-                self.add_error('inquiry_category', "Inquiry category is required.")
-            if not question: # Inquiry uses 'question' instead of 'description'
+                self.add_error('inquiry_category', "Inquiry category is required here.")
+                print("Error: Inquiry category required.")
+            if not question or not question.strip(): # Inquiry uses 'question' instead of 'description'
                 self.add_error('question', "Your question is required.")
+                print("Error: Inquiry question empty.")
             # Clear other fields
             cleaned_data['complaint_category'] = None
-            # cleaned_data['complaint_priority'] = None
-            # cleaned_data['location_address'] = None
-            # cleaned_data['latitude'] = None
-            # cleaned_data['longitude'] = None
             cleaned_data['attachments'] = None
             cleaned_data['service_type'] = None
-            cleaned_data['priority'] = None
+            # cleaned_data['priority'] = None
             cleaned_data['due_date'] = None
             cleaned_data['emergency_type'] = None
             cleaned_data['location'] = None
             cleaned_data['description'] = question # For consistency, you might map question to description if models share it
-
+            print(f"Mapped form's 'question' to model's 'description': '{cleaned_data['description']}'")
         elif request_type == 'emergency':
             if not cleaned_data.get('emergency_type'):
                 self.add_error('emergency_type', "Emergency type is required.")
-            if not cleaned_data.get('location'):
+                print("Error: Emergency type required.")
+            if not cleaned_data.get('location') or not cleaned_data.get('location').strip():
                 self.add_error('location', "Location is required for emergency reports.")
-            if not description:
+                print("Error: Emergency location empty.")
+            if not description or not description.strip():
                 self.add_error('description', "Description is required for emergency reports.")
+                print("Error: Emergency description empty.")
             # Clear other fields
             cleaned_data['complaint_category'] = None
             cleaned_data['complaint_priority'] = None
@@ -302,5 +300,7 @@ class UnifiedRequestForm(forms.Form):
             cleaned_data['anonymous_full_name'] = None
             cleaned_data['anonymous_email'] = None
             cleaned_data['anonymous_phone'] = None
-
+            
+        print(f"Form errors after clean: {self.errors.as_json()}") # Final form errors debug
+        print(f"--- End UnifiedRequestForm.clean() ---")
         return cleaned_data

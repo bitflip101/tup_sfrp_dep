@@ -6,16 +6,16 @@ from django.db import transaction
 from django.urls import reverse_lazy
 import traceback # For debugging
 
-# Your models
+# Models
 from complaints.models import Complaint
 from services.models import ServiceRequest
 from inquiries.models import Inquiry
 from emergencies.models import EmergencyReport
 
-# Your forms
+# Forms
 from .forms import UnifiedRequestForm
 
-# Your notification utility functions
+# Notification utility functions
 from notifications.utils import send_new_request_submission_notifications
 
 # For attachments
@@ -43,6 +43,7 @@ class UnifiedRequestSubmitView(View):
             form = UnifiedRequestForm(request.POST, request.FILES, request=request)
 
             if form.is_valid():
+                print("Form IS valid. Proceeding with object creation.") # Debug
                 request_type = form.cleaned_data['request_type']
                 report_anonymously = form.cleaned_data.get('report_anonymously', False) # Default to False if not present
 
@@ -89,8 +90,8 @@ class UnifiedRequestSubmitView(View):
                         )
                         success_message = "Your complaint has been submitted successfully."
                         # For logged-in users, redirect to their list of complaints
-                        if submitted_by_user:
-                             redirect_url = reverse_lazy('complaints:my_complaints')
+                        # if submitted_by_user:
+                        #      redirect_url = reverse_lazy('complaints:my_complaints')
 
                     elif request_type == 'service':
                         created_object = ServiceRequest.objects.create(
@@ -160,10 +161,13 @@ class UnifiedRequestSubmitView(View):
                         return redirect(request, self.template_name, self.get_context_data(form=form))
 
             else: # Form is not valid
+                print(f"Form IS NOT valid. Errors: {form.errors.as_json()}") # Debug
                 messages.error(request, "Please correct the errors below.")
                 return render(request, self.template_name, self.get_context_data(form=form))
 
         except Exception as e:
+            print(f"Caught unexpected exception in post method: {e}") # Debug
+            traceback.print_exc() 
             messages.error(request, f"An unexpected error occurred: {e}")
             traceback.print_exc() # Print full traceback to console for debugging
             return render(request, self.template_name, self.get_context_data(form=form if form else UnifiedRequestForm()))
