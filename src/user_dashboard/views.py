@@ -1,9 +1,13 @@
 # user_dashboard/views.py
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404
 from django.contrib.auth.decorators import login_required 
 from django.core.paginator import Paginator 
 from django.db.models import Q # For Search
+from django.views.generic import View # Import View for ProfileSettingsView
+from django.contrib import messages # Import messages for success/error alerts
+from django.contrib.auth.decorators import login_required # Keep this for function-based views like user_request_list
+from django.contrib.auth.mixins import LoginRequiredMixin # NEW: Import LoginRequiredMixin
 
 # Import request models
 from complaints.models import Complaint 
@@ -14,6 +18,9 @@ from emergencies.models import EmergencyReport
 # For attachments
 from django.contrib.contenttypes.models import ContentType
 from attachments.models import RequestAttachment # Import the RequestAttachment model
+
+# Import the ProfileUpdateForm
+from .forms import ProfileUpdateForm
 
 @login_required
 def user_request_list(request):
@@ -157,3 +164,31 @@ def user_request_detail(request, request_type_slug, pk):
     }
 
     return render(request, template_name, context)
+
+class ProfileSettingsView(LoginRequiredMixin,View):
+    template_name = 'user_dashboard/profile_settings.html'
+
+    def get(self, request, *args, **kwargs):
+        # Populate the form with the current user's data
+        form = ProfileUpdateForm(instance=request.user)
+        context = {
+            'form': form,
+            'user_dashboard_title': 'Profile Settings', # For base template title block
+            'main_user_dashboard_heading': 'Profile Settings', # For base template heading block
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        form = ProfileUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('user_dashboard:profile_settings') # Redirect back to the profile page
+        else:
+            messages.error(request, 'Please correct the errors below.')
+            context = {
+                'form': form,
+                'user_dashboard_title': 'Profile Settings',
+                'main_user_dashboard_heading': 'Profile Settings',
+            }
+            return render(request, self.template_name, context)
