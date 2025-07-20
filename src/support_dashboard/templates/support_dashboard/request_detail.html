@@ -73,32 +73,32 @@
                     <div class="col-md-4"><strong>Complaint Category:</strong></div>
                     <div class="col-md-8">{{ request_obj.category.name }}</div>
                 </div>
-                <div class="row mb-2">
+                <!-- <div class="row mb-2">
                     <div class="col-md-4"><strong>Priority:</strong></div>
                     <div class="col-md-8">{{ request_obj.priority }}</div>
-                </div>
-                <div class="row mb-2">
+                </div> -->
+                <!-- <div class="row mb-2">
                     <div class="col-md-4"><strong>Location Address:</strong></div>
                     <div class="col-md-8">{{ request_obj.location_address|default:"N/A" }}</div>
-                </div>
-                <div class="row mb-2">
+                </div> -->
+                <!-- <div class="row mb-2">
                     <div class="col-md-4"><strong>Coordinates:</strong></div>
                     <div class="col-md-8">{% if request_obj.latitude and request_obj.longitude %}{{ request_obj.latitude }}, {{ request_obj.longitude }}{% else %}N/A{% endif %}</div>
-                </div>
+                </div> -->
 
             {% elif request_obj|instance_of:'ServiceRequest' %}
                 <div class="row mb-2">
                     <div class="col-md-4"><strong>Service Type:</strong></div>
                     <div class="col-md-8">{{ request_obj.service_type.name }}</div>
                 </div>
-                <div class="row mb-2">
+                <!-- <div class="row mb-2">
                     <div class="col-md-4"><strong>Priority:</strong></div>
                     <div class="col-md-8">{{ request_obj.priority|default:"N/A" }}</div>
-                </div>
-                <div class="row mb-2">
+                </div> -->
+                <!-- <div class="row mb-2">
                     <div class="col-md-4"><strong>Due Date:</strong></div>
                     <div class="col-md-8">{{ request_obj.due_date|date:"M d, Y"|default:"N/A" }}</div>
-                </div>
+                </div> -->
 
             {% elif request_obj|instance_of:'Inquiry' %}
                 <div class="row mb-2">

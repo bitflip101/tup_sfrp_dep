@@ -1,11 +1,6 @@
 from django.urls import path
 from . import views
 
-# --- ADD THESE TWO PRINT STATEMENTS ---
-print(f"DEBUG: Type of views.ProfileSettingsView: {type(views.ProfileSettingsView)}")
-print(f"DEBUG: Is views.ProfileSettingsView a class? {isinstance(views.ProfileSettingsView, type)}")
-# ------------------------------------
-
 app_name = 'user_dashboard'
 
 urlpatterns = [

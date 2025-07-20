@@ -5,9 +5,10 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy # Import reverse_lazy for success_url in CBVs
 import datetime
+import traceback
 
 # Import Django's generic views
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -191,10 +192,13 @@ class RequestListView(SupportDashboardMixin, View):
             'resolved_today': 0,
         }
         today = datetime.date.today()
+
+        # Initialize status counts
         for value, display in STATUS_CHOICES:
             if value:
                 stats['status_counts'][value] = 0
 
+        # Initialize type counts
         for type_slug in self.model_map.keys():
             stats['type_counts'][type_slug] = 0
 
@@ -203,17 +207,26 @@ class RequestListView(SupportDashboardMixin, View):
 
             stats['total_requests'] += queryset.count()
 
+            # Count by status
             for status_value, _ in STATUS_CHOICES:
                 if status_value and hasattr(model_class, 'status'):
                     stats['status_counts'][status_value] += queryset.filter(status=status_value).count()
 
+            # Count by type
             stats['type_counts'][model_name] += queryset.count()
 
+            # Count new today
             if hasattr(model_class, 'submitted_at'):
                 stats['new_today'] += queryset.filter(submitted_at__date=today).count()
 
-            if hasattr(model_class, 'status'):
-                stats['resolved_today'] += queryset.filter(status='resolved', submitted_at__date=today).count()
+            # Count resolved today using 'resolved_at' field
+            if hasattr(model_class, 'status') and hasattr(model_class, 'resolved_at'):
+                # Only count if status is 'resolved' AND resolved_at date is today
+                stats['resolved_today'] += queryset.filter(
+                    status='resolved', 
+                    # submitted_at__date=today
+                    resolved_at__date=today
+                    ).count()
 
         return stats
 
@@ -281,6 +294,14 @@ class RequestDetailView(SupportDashboardMixin, View):
             if status_form.is_valid():
                 old_status = request_obj.status
                 request_obj.status = status_form.cleaned_data['status']
+
+                # Set resolved_at when status becomes 'resolved'
+                if request_obj.status == 'resolved' and request_obj.resolved_at is None:
+                    request_obj.resolved_at = datetime.datetime.now()
+                # Clear resolved_at if status changes from 'resolved' to 'another_status'
+                elif request_obj.status != 'resolved' and request_obj.resolved_at is not None:
+                    request_obj.resolved_at = None
+
                 request_obj.save()
                 messages.success(request, f"Status for {request_type.capitalize()} #{request_obj.pk} updated to {request_obj.get_status_display()}.")
                 send_request_status_update_email(request_obj, old_status, request_obj.status)
@@ -416,11 +437,38 @@ class CategoryDeleteView(CategoryBaseMixin, DeleteView):
     template_name = 'support_dashboard/category_confirm_delete.html' # Dedicated delete confirmation template
     pk_url_kwarg = 'category_pk' # Expected keyword argument in URL for primary key
 
-    def form_valid(self, form):
-        # When DeleteView's form_valid is called, it means deletion is confirmed.
-        # The object is deleted by super().form_valid(form)
-        messages.success(self.request, f"{self.verbose_name} '{self.object.name}' deleted successfully.")
-        return super().form_valid(form)
+    # Explicitly override post to add debug and ensure proper flow
+    def post(self, request, *args, **kwargs):
+        print(f"DEBUG: CategoryDeleteView post method hit. Request method: {request.method}")
+        print(f"DEBUG: Request POST data: {request.POST}")
+        try:
+            # Get the object to be deleted. Use self.get_object() which handles Http404 if not found.
+            self.object = self.get_object() 
+            object_name = self.object.name # Store name before deletion for message
+
+            # Perform the actual deletion
+            self.object.delete()
+            
+            messages.success(self.request, f"{self.verbose_name} '{object_name}' deleted successfully.")
+            
+            # Redirect to the success URL
+            redirect_url = self.get_success_url()
+            print(f"DEBUG: Redirecting to: {redirect_url}")
+            return HttpResponseRedirect(redirect_url)
+
+        except Exception as e:
+            print(f"DEBUG: Exception caught in CategoryDeleteView post: {e}")
+            traceback.print_exc() # Print full traceback
+            messages.error(request, f"An error occurred during deletion: {e}")
+            # If an error occurs, re-render the current page with the error message
+            return self.get(request, *args, **kwargs) 
+
+    # def form_valid(self, form):
+    #     print(f"DEBUG: CategoryDeleteView form_valid method hit for object: {self.object.name}")
+    #     # When DeleteView's form_valid is called, it means deletion is confirmed.
+    #     # The object is deleted by super().form_valid(form)
+    #     messages.success(self.request, f"{self.verbose_name} '{self.object.name}' deleted successfully.")
+    #     return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -428,6 +476,15 @@ class CategoryDeleteView(CategoryBaseMixin, DeleteView):
         # Add specific breadcrumb for delete confirmation
         context['breadcrumbs'].append({'name': f"Delete '{self.object.name}'", 'url': self.request.path})
         return context
+    
+    # Add get_success_url to ensure it's correctly generating the redirect URL
+    def get_success_url(self):
+        # This method is called by DeleteView.post() after successful deletion
+        # self.category_type_slug is set in dispatch()
+        url = reverse_lazy('support_dashboard:category_list', 
+                           kwargs={'category_type_slug': self.category_type_slug})
+        print(f"DEBUG: CategoryDeleteView get_success_url: {url}")
+        return url
     
 # --- User Management Views ---
 class UserListView(UserAdminRequiredMixin, ListView):
