@@ -1,20 +1,20 @@
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.utils.html import strip_tags
+# from django.utils.html import strip_tags
 from django.urls import reverse
 import logging
 
 # Helper function to strip HTML tags for plain text email (add to notifications/utils.py)
 from django.utils.html import strip_tags
 
-# Import your request models here
+# Import request models here
 from complaints.models import Complaint
 from services.models import ServiceRequest
 from inquiries.models import Inquiry
 from emergencies.models import EmergencyReport
 
-# You might need to import ContentType for dynamically generating admin URLs
+# Need to import ContentType for dynamically generating admin URLs
 from django.contrib.contenttypes.models import ContentType
 
 # Get an instance of a logger
@@ -36,9 +36,19 @@ def send_request_status_update_email(request_obj, old_status, new_status):
     # Get the human-readable display values using the map
     # .get(key, default) is used in case a status value isn't perfectly mapped (e.g., a typo)
     old_status_display = status_choices_map.get(old_status, old_status) # Fallback to raw value if display not found
+    if request_obj.submitted_by:
+        full_name = request_obj.submitted_by.get_full_name()
+        if full_name:
+            user_name = full_name
+        else:
+            # Fallback to username if get_full_name()is empty (e.g., first_name/last_name not set)
+            user_name = request_obj.submitted_by.username
+    elif request_obj.full_name: # For anonymous submissions where a name was provided
+        user_name = request_obj.full_name
     new_status_display = status_choices_map.get(new_status, new_status)
 
-    user_name = request_obj.submitted_by.get_full_name() if request_obj.submitted_by else (request_obj.full_name or 'Valued User')
+    # user_name = request_obj.submitted_by.get_full_name() if request_obj.submitted_by else (request_obj.full_name or 'Valued User')
+
     recipient_email = request_obj.submitted_by.email if request_obj.submitted_by else request_obj.email
 
     if not recipient_email:
@@ -57,6 +67,7 @@ def send_request_status_update_email(request_obj, old_status, new_status):
         'old_status': old_status_display, # Use the correctly obtained display value
         'new_status': new_status_display, # Use the correctly obtained display value
         'request_url': request_url,
+        'request_type': request_obj.request_type_slug.replace('_', ' ').title(), # for template
     }
 
     user_subject = f"Your Request #{request_obj.pk} Status Update: {new_status_display}"
@@ -173,30 +184,24 @@ def send_new_request_submission_notifications(request_obj):
         user_msg.send()
 
     # --- Email to Admin/Support (New Request Alert) ---
-    # You need to define ADMIN_EMAIL_FOR_NOTIFICATIONS in your settings.py
+    # Need to define ADMIN_EMAIL_FOR_NOTIFICATIONS in the settings.py
     admin_recipient_email = getattr(settings, 'ADMIN_EMAIL_FOR_NOTIFICATIONS', None)
     if admin_recipient_email:
         # Link to the admin dashboard detail view
         try:
-            # Get the ContentType for the specific model instance
-            content_type = ContentType.objects.get_for_model(request_obj.__class__)
-            # Construct the admin change URL name (e.g., 'admin:support_dashboard_complaint_change')
-            # Assuming your admin uses app_label_model_name format
-            admin_url_name = f'admin:{content_type.app_label}_{content_type.model.lower()}_change'
-            admin_base_url = reverse(admin_url_name, args=[request_obj.pk])
-            # Prepend settings.BASE_URL for a full, absolute URL in the email
-            admin_request_url = settings.BASE_URL + admin_base_url
+            admin_request_url = settings.BASE_URL + reverse(
+                'support_dashboard:request_detail',
+                kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk}
+            )
+            logger.info(f"Generated admin URL for request {request_obj.pk}: {admin_request_url}")
         except Exception as e:
-            print(f"Error reversing admin request URL: {e}") # Log the error for debugging
-            admin_request_url = settings.BASE_URL + '/admin/' # Fallback if URL reverse fails
+            logger.error(f"Error reversing support_dashboard request URL for request {request_obj.pk}: {e}")
+            admin_request_url = settings.BASE_URL + '/support-dashboard/' # Fallback if URL reverse fails
 
         admin_context = {
-            'request': request_obj,  # <--- Pass the FULL request_obj here!
-            'site_name': getattr(settings, 'SITE_NAME', 'Your Support System'), # Use setting if available
+            'request': request_obj,  
+            'site_name': getattr(settings, 'SITE_NAME', ''), 
             'admin_request_url': admin_request_url,
-            # 'request_id', 'request_type', 'request_subject', etc. will now be
-            # accessed directly via 'request.id', 'request.request_type_slug', 'request.subject'
-            # in the template, which aligns with the template structure I gave you.
         }
         admin_subject = f"New {request_obj.request_type_slug.replace('_', ' ').title()} Submitted: #{request_obj.pk} - {request_obj.subject}"
 

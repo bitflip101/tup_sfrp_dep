@@ -1,7 +1,7 @@
 # support_dashboard/urls.py
 from django.urls import path
 from .views import (
-    RequestListView, RequestDetailView, RequestTrendView,
+    RequestListView, RequestDetailView,
     # Importing the category management views
     CategoryListView, CategoryCreateView, CategoryUpdateView, CategoryDeleteView,
      # Importing the new user management views
@@ -19,7 +19,7 @@ urlpatterns = [
     # --- Request Management URLs ---
     path('', RequestListView.as_view(), name='request_list'),
     path('<str:request_type>/<int:pk>/', RequestDetailView.as_view(), name='request_detail'),
-    path('request-trend/', RequestTrendView.as_view(), name='request-trend'),
+    # path('request-trend/', RequestTrendView.as_view(), name='request-trend'),
 
     # --- Category Management URLs ---
     # Example usage in template:
@@ -41,7 +41,6 @@ urlpatterns = [
 
 
     # --- User Management URLs ---
-    # Example usage in template:
     # {% url 'support_dashboard:user_list' %}
     
     # List all users

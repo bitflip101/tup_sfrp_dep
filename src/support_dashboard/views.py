@@ -4,11 +4,14 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count # Import Count for Aggregation
+from django.db import models
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy # Import reverse_lazy for success_url in CBVs
 import datetime
 import traceback
+from collections import OrderedDict # For ordered dict to maintain date order
+from django.db.models.functions import TruncDate
 
 # Import Django's generic views
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -128,18 +131,38 @@ class RequestListView(SupportDashboardMixin, View):
         all_requests = sorted(all_requests, key=lambda x: x.submitted_at, reverse=True)
         dashboard_stats = self.get_dashboard_statistics()
 
-        context = {
+        request_trend_data = self.get_request_trend_data()
+
+        context = super().get_context_data(**kwargs)
+        context.update({
             'requests': all_requests,
             'filter_form': filter_form,
-            'dashboard_stats': dashboard_stats
-        }
+            'dashboard_stats': dashboard_stats,
+            'request_trend_data': request_trend_data,
+            'request_types_for_chart': {
+                'complaint': 'Complaint',
+                'service': 'Service Request',
+                'inquiry': 'Inquiry',
+                'emergency': 'Emergency Report',
+            },
+            'status_choices_for_chart': list(STATUS_CHOICES) # Pass STATUS CHOICES for pie chart
+        })
         return render(request, self.template_name, context)
 
     def get_filtered_requests(self, filter_form):
         combined_objects = []
+        user = self.request.user
 
         for model_name, model_class in self.model_map.items():
-            for obj in model_class.objects.all():
+            queryset = model_class.objects.all()
+
+            # --- Filtering based on assigned_to for non-superusers ---
+            if user.is_staff and not user.is_superuser:
+                # --- Filter to show request assigned to the current user or unassigned requests
+                # queryset = queryset.filter(Q(assigned_to=user))  ## | Q(assigned_to__isnull=True))
+                queryset = queryset.filter(assigned_to=user)
+
+            for obj in queryset: # --- Iterate over the potentially filtered queryset
                 obj.request_type_slug = model_name
                 combined_objects.append(obj)
 
@@ -147,6 +170,7 @@ class RequestListView(SupportDashboardMixin, View):
             cleaned_data = filter_form.cleaned_data
 
             request_type = cleaned_data.get('request_type')
+
             if request_type:
                 combined_objects = [req for req in combined_objects if req.request_type_slug == request_type]
 
@@ -192,6 +216,7 @@ class RequestListView(SupportDashboardMixin, View):
             'resolved_today': 0,
         }
         today = datetime.date.today()
+        user = self.request.user
 
         # Initialize status counts
         for value, display in STATUS_CHOICES:
@@ -204,6 +229,10 @@ class RequestListView(SupportDashboardMixin, View):
 
         for model_name, model_class in self.model_map.items():
             queryset = model_class.objects.all()
+
+            # --- Filtering for statistics based on assiged_to for non-superusers (no unassigned) ---
+            if user.is_staff and not user.is_superuser:
+                queryset = queryset.filter(assigned_to=user) # Removed | Q(assigned_to__isnull=True)
 
             stats['total_requests'] += queryset.count()
 
@@ -229,6 +258,85 @@ class RequestListView(SupportDashboardMixin, View):
                     ).count()
 
         return stats
+    
+    def get_request_trend_data(self, days=365): # Fetch data up to 1 year.
+        """
+        Calculates daily trends for new and resolved requests over the last 'days' period.
+        Also aggregates counts for each request type daily.
+        Respects staff/superuser permissions. Returns raw daily counts.
+        """
+        user = self.request.user
+        today = datetime.date.today()
+        start_date = today - datetime.timedelta(days=days -1)
+
+        # --- Initialize data structure fro each day in teh period.
+        # --- Using ORderDirect to maintain insertion order (dates)
+        daily_trend_data = OrderedDict()
+        for i in range(days -1, -1, -1): # -- Iterate from 'days' ago up to today
+            date = today - datetime.timedelta(days=i)
+            date_str = date.strftime('%Y-%m-%d')
+            daily_trend_data[date_str] = {'date': date_str, 'new':0, 'resolved':0}
+            # daily_counts[date.strftime('%Y-%m-%d')] = {'new': 0, 'resolved': 0}
+            for type_slug in self.model_map.keys():
+                daily_trend_data[date_str][type_slug] = 0
+
+        for model_name, model_class in self.model_map.items():
+            queryset = model_class.objects.all()
+
+            # Apply staff/superuser filtering to trend data
+            if user.is_staff and not user.is_superuser:
+                queryset = queryset.filter(assigned_to=user)
+
+            # Filter for the relevant period based on submitted_at
+            queryset_in_period = queryset.filter(submitted_at__date__gte=start_date, submitted_at__date__lte=today)
+
+            # --- Aggregate new requests by submitted_at date and type
+            if hasattr(model_class, 'submitted_at'):
+                new_requests_aggregated = queryset_in_period.values('submitted_at__date').annotate(count=Count('pk'))
+                for entry in new_requests_aggregated:
+                    date_str = entry['submitted_at__date'].strftime('%Y-%m-%d')
+                    if date_str in daily_trend_data:
+                        daily_trend_data[date_str]['new'] += entry['count']
+                        # Also count by specific type
+                        daily_trend_data[date_str][model_name] += entry['count']
+
+            # --- Aggregate new requests by submitted_at date
+            if hasattr(model_class, 'status') and hasattr(model_class, 'resolved_at'):
+                resolved_requests_aggregate = queryset.filter(
+                    status = 'resolved',
+                    # -- Use TruncDate for resolved_at to ensure proper grouping
+                    resolved_at__gte=start_date,
+                    resolved_at__lte=today + datetime.timedelta(days=1, microseconds=-1) # End of today
+                ).annotate(
+                    resolved_day=TruncDate('resolved_at')
+                    # submitted_at__date__gte=start_date,
+                    # submitted_at__date__lte=today
+                ).values('resolved_day').annotate(count=Count('pk'))
+                
+                for entry in resolved_requests_aggregate:
+                    # -- Access the truncated date field
+                    # date_str = entry['resolved_at__date'].strftime('%Y-%m-%d')
+                    date_obj = entry['resolved_day']
+                    date_str = date_obj.strftime('%Y-%m-%d')
+                    if date_str in daily_trend_data:
+                        daily_trend_data[date_str]['resolved'] += entry['count']
+                    
+        # Convert OrderedDict values to a list of dictionaries for JSON serialization
+        return list(daily_trend_data.values())
+    
+# class RequestTrendView(SupportDashboardMixin, View):
+#     template_name = 'support_dashboard/request_trend.html'
+
+#     model_map = {
+#         'complaint': Complaint,
+#         'service': ServiceRequest,
+#         'inquiry': Inquiry,
+#         'emergency': EmergencyReport,
+#     }
+
+#     def get(self, request, *args, **kwargs):
+#         filter_form = RequestFilterForm(request.GET)
+#         return render(request, self.template_name, {})
 
 # --- RequestDetailView ---
 class RequestDetailView(SupportDashboardMixin, View):
@@ -246,6 +354,18 @@ class RequestDetailView(SupportDashboardMixin, View):
             raise Http404("Invalid request type.")
         # Use select_related for submitted_by and assigned_to to reduce queries
         return get_object_or_404(model.objects.select_related('submitted_by', 'assigned_to'), pk=pk)
+
+        user = self.request.user
+
+        # --- Access control for RequestDetailView (no unassigned for staff)
+        if user.is_staff and not user.is_superuser:
+            # -- Staff can only view requests assigned to them.
+            # -- They cannot view requests assigned to others OR unassigned requests.
+            if request_obj.assigned_to != user: # -- simplified condition / no group assignment in data models
+                messages.error(self.request, "You donot have permission to view this request.")
+                raise Http404("You donot have permission to view this request.")
+            
+        return request_obj
 
     def get_context_data(self, request_obj, status_form=None, assignment_form=None, **kwargs):
         context = super().get_context_data(**kwargs) # Get base breadcrumbs
@@ -332,20 +452,6 @@ class RequestDetailView(SupportDashboardMixin, View):
         # Re-render the page with forms and attachments if there were errors
         context = self.get_context_data(request_obj, status_form=status_form, assignment_form=assignment_form)
         return render(request, self.template_name, context)
-
-class RequestTrendView(SupportDashboardMixin, View):
-    template_name = 'support_dashboard/request_trend.html'
-
-    model_map = {
-        'complaint': Complaint,
-        'service': ServiceRequest,
-        'inquiry': Inquiry,
-        'emergency': EmergencyReport,
-    }
-
-    def get(self, request, *args, **kwargs):
-        filter_form = RequestFilterForm(request.GET)
-        return render(request, self.template_name, {})
 
 # --- Category Management Views ---
 class CategoryBaseMixin(SupportDashboardMixin):
