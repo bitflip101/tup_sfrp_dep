@@ -83,10 +83,9 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 # Database
 DATABASES = {
-    'default': { 
+    'default': 
         config('DATABASE_URL', cast=db_url)
     }
-}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -131,9 +130,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Allauth General Account Settings
-ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_SIGNUP_FIELDS = ['email']
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory' # Email verification is mandatory
 
 ACCOUNT_RATE_LIMITS = {
