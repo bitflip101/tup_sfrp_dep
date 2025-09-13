@@ -254,11 +254,14 @@
 
 {% block extra_js %}
     {# Luxon for date manipulation - LOADED FIRST #}
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script> -->
+     <script src="{% static 'js/luxon.min.js' %}"></script>
     {# Chart.js CDN #}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script> -->
+     <script src="{% static 'js/chart.min.js' %}"></script>
     {# Chart.js Adapter Luxon for time scales - LOADED AFTER LUXON AND CHART.JS #}
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0/dist/chartjs-adapter-luxon.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0/dist/chartjs-adapter-luxon.min.js"></script> -->
+     <script src="{% static 'js/chartjs-adapter-luxon.min.js' %}"></script>
 
     {# JSON script tags to pass data from Django to JavaScript #}
     {{ request_trend_data|json_script:"request_trend_data_json" }}

@@ -20,6 +20,7 @@ from django.contrib.contenttypes.models import ContentType
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
+# Send email to user when request has been updated or status changed.
 def send_request_status_update_email(request_obj, old_status, new_status):
     """
     Sends an email to the user when their request status is updated.
@@ -93,8 +94,7 @@ def send_request_assignment_email(request_obj):
     assigned_staff_name = request_obj.assigned_to.get_full_name() or request_obj.assigned_to.username
     recipient_email = request_obj.assigned_to.email
 
-    request_url = settings.BASE_URL + reverse(
-        'support_dashboard:request_detail',
+    request_url = settings.BASE_URL + reverse('support_dashboard:request_detail',
         kwargs={'request_type': request_obj.request_type_slug, 'pk': request_obj.pk} # Ensure request_type_slug is available
     )
 
