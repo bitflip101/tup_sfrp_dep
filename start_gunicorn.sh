@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # --- Define your paths and settings ---
-VENV_PATH="/home/me/Dev/py/dj/rvenv_dep"
+#VENV_PATH="/home/me/Dev/py/dj/rvenv_dep"
+VENV_PATH="/home/me/Dev/py/dj/tup_sfrp_github_v1/rvenv"
 PROJECT_ROOT="/home/me/Dev/py/dj/tup_sfrp_github_v1/src"
 SOCKET_PATH="/tmp/gunicorn_tup_sfrp.sock"
 

@@ -84,6 +84,7 @@ def send_request_status_update_email(request_obj, old_status, new_status):
     user_msg.attach_alternative(user_html_content, "text/html")
     user_msg.send()
 
+# Send email to sfaff/support when request has been assigned to the group.
 def send_request_assignment_email(request_obj):
     """
     Sends an email to the newly assigned staff member.

@@ -13,7 +13,7 @@ from .views import (
     FAQItemListView, FAQItemCreateView, FAQItemUpdateView, FAQItemDeleteView,
 )
 
-app_name = 'support_dashboard' # Important for namespacing
+app_name = 'support_dashboard'
 
 urlpatterns = [
     # --- Request Management URLs ---

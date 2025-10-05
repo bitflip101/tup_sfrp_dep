@@ -16,9 +16,9 @@
 <body class="d-flex flex-column h-100">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'abode:sfrp_lp' %}">
-                 <img src="{% static 'images/TUP_LOGO.png' %}" alt="School Logo" height="30" class="d-inline-block align-top mr-2">
-                TUP - SFRP
+            <a class="navbar-brand active" href="{% url 'abode:sfrp_lp' %}">
+                 <!-- <img src="{% static 'images/TUP_LOGO.png' %}" alt="School Logo" height="30" class="d-inline-block align-top mr-2"> -->
+                <i class="fa fa-fw fa-home"></i> School Feedback Resolution Portal
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -30,6 +30,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'faqs:faq_list' %}">FAQ</a>
+                    </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="#">About</a>
                     </li>
                     {% if user.is_authenticated %}
                         {% if user.is_staff %}
@@ -76,9 +79,9 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4 mb-md-0">
-                    <h5>About TUP - SFRP</h5>
+                    <h5>About SFRP</h5>
                     <p class="text-secondary">
-                        Your centralized platform for feedback and resolution at TUP. Inspired by the 8888 Citizens' Complaint Center, we provide a streamlined channel for complaints, service requests, inquiries, and emergency assistance, ensuring your concerns are heard and addressed efficiently.
+                        Your centralized platform for feedback and resolution in a state run Educational Institution. Inspired by the 8888 Citizens' Complaint Center, we provide a streamlined channel for complaints, service requests, inquiries, and emergency assistance, ensuring your concerns are heard and addressed efficiently.
                     </p>
                 </div>
 
@@ -94,9 +97,9 @@
                 <div class="col-md-4">
                     <h5>Contact Us</h5>
                     <ul class="list-unstyled text-secondary">
-                        <li><i class="fas fa-map-marker-alt mr-2"></i> Ayala Blvd, Ermita, Manila, 1000 Metro Manila</li>
-                        <li><i class="fas fa-phone mr-2"></i> +63 2 8525 6184 (Main Hotline)</li>
-                        <li><i class="fas fa-envelope mr-2"></i> support@tup.edu.ph</li>
+                        <li><i class="fas fa-map-marker-alt mr-2"></i> Institution Address</li>
+                        <li><i class="fas fa-phone mr-2"></i> +63 2 8888 8888 (Main Hotline)</li>
+                        <li><i class="fas fa-envelope mr-2"></i> support@sfrp.edu.ph</li>
                     </ul>
                     <div class="social-icons mt-3">
                         <a href="#" target="_blank" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
@@ -109,7 +112,7 @@
     </footer>
     <div class="footer-bottom text-center">
         <div class="container">
-            <p class="mb-0">&copy; {% now "Y" %} Technological University of the Philippines. All rights reserved.</p>
+            <p class="mb-0">&copy; {% now "Y" %} School Feedback Resolution Portal. All rights reserved.</p>
         </div>
     </div>
 
