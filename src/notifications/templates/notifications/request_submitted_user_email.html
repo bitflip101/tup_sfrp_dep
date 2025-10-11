@@ -8,7 +8,7 @@
     <p>Thank you for submitting your request to TUP_SFRP System.</p>
     <p>Your <strong>{{ request_obj.request_type_slug}}</strong> ID is <strong>#{{ request_obj.id }}</strong> with the subject: <strong>"{{ request_obj.subject }}"</strong>.</p>
     <p>We have received your report and will review it shortly. You will receive updates on its status.</p>
-    <p>You can view the details of your complaint here: <a href="{% url 'user_dashboard:user_request_list' %}">{{ request_url }}</a></p>
+    <p>You can view the details of your complaint here: <a href="{{ request_url }}">{{ request_url }}</a></p>
     <br>
     <p>Thank you,</p>
     <p>The {{ site_name }} Team</p>

@@ -150,12 +150,12 @@ def send_new_request_submission_notifications(request_obj):
         # Assuming you have a user-facing detail URL like 'unified_requests:request_detail'
         try:
             user_request_url = settings.BASE_URL + reverse(
-                'unified_requests:request_detail',
+                'user_dashboard:user_request_detail',
                 kwargs={'request_type_slug': request_obj.request_type_slug, 'pk': request_obj.pk}
             )
         except Exception as e:
             print(f"Error reversing user request URL: {e}") # Log the error for debugging
-            user_request_url = settings.BASE_URL # Fallback if URL reverse fails
+            user_request_url = settings.BASE_URL + '/user-dashboard/' # Fallback if URL reverse fails
 
         user_context = {
             'user_name': user_name,
