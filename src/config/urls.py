@@ -9,7 +9,7 @@ urlpatterns = [
 
     path('accounts/', include('allauth.urls')),
 
-    # Keeping the custom accounts URLs for profile, etc.,
+    # Keeping the custom accounts URLs for profile, etc.,..update - profile now is in user_dashboard app (TODO: Cleanup this accounts app)
     # but allauth handles register, login, logout, password reset, email verification
     path('accounts/', include("accounts.urls")),
 

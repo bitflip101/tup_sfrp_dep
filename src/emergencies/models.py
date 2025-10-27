@@ -58,10 +58,10 @@ class EmergencyReport(models.Model):
     )
     subject = models.CharField(
         max_length=255,
-        help_text="A brief summary or title of the complaint."
+        help_text="A brief summary or title of the emergency."
     )
     description = models.TextField(
-        help_text="Detailed description of the complaint, including all relevant information."
+        help_text="Detailed description of the emergency, including all relevant information."
     )
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -69,7 +69,7 @@ class EmergencyReport(models.Model):
         null=True,
         blank=True,
         related_name='emergency_requests_assigned',
-        help_text="Admin/Staff member assigned to this service request."
+        help_text="Admin/Staff member assigned to this emergency request."
     )
 
     attachments = models.FileField(
@@ -80,7 +80,7 @@ class EmergencyReport(models.Model):
     )
 
     location = models.CharField(max_length=255, help_text="Specific location of the emergency.")
-    description = models.TextField(help_text="Details of the emergency.")
+    # description = models.TextField(help_text="Details of the emergency.")
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

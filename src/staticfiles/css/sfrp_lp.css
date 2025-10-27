@@ -1,3 +1,57 @@
+/* Any additional landing page specific CSS that applies global styles could go here. */
+
 .sfrp_lp_bg {
     background: rgba(154, 6, 6, 0.753) !important;
+}
+ /* Custom styles for landing page buttons to stack on small screens */
+.lp-buttons-group .btn {
+    width: 100%; /* Full width on small screens */
+    margin-bottom: 10px; /* Space between stacked buttons */
+    /* NEW: Adjust padding for btn-lg specifically on small screens to reduce height */
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    font-size: 1rem; /* Slightly smaller font for better fit */
+}
+@media (min-width: 768px) { /* Medium devices and up */
+    .lp-buttons-group .btn {
+        width: auto; /* Revert to auto width */
+        margin-bottom: 0; /* No bottom margin when horizontal */
+        margin-left: 10px; /* Space between horizontal buttons */
+        padding-top: 0.8rem; /* Restore normal btn-lg padding */
+        padding-bottom: 0.8rem;
+        font-size: 1.25rem; /* Restore normal btn-lg font size */
+    }
+    .lp-buttons-group .btn:first-child {
+        margin-left: 0; /* No left margin for the first button in the group */
+    }
+}
+
+/* Adjust card padding and margin for better mobile usability */
+.info-card {
+    padding: 1.5rem !important; /* Increase padding */
+    margin-bottom: 1.5rem !important; /* Increase bottom margin */
+}
+.info-card i {
+    font-size: 2.5em; /* Slightly larger icons */
+}
+
+/* Adjust Jumbotron padding on smaller screens */
+.jumbotron.sfrp_lp_bg {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+@media (min-width: 768px) {
+    .jumbotron.sfrp_lp_bg {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+}
+/* NEW: Ensure responsive font sizing for display-5 and lead text */
+.jumbotron .display-5 {
+    /* Use clamp for more fluid and bounded font sizing */
+    font-size: clamp(2rem, 5vw, 3rem); /* Min 2rem, fluid up to 5vw, max 3rem */
+}
+.jumbotron .lead, .jumbotron p {
+    font-size: clamp(1rem, 3vw, 1.25rem); /* Min 1rem, fluid up to 3vw, max 1.25rem */
+    line-height: 1.5; /* Ensure good line spacing to prevent overlap */
 }
